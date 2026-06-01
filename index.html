@@ -21,7 +21,7 @@
         }
         /* Custom animations */
         @keyframes splat {
-            0% { transform: scale(0.3); opacity: 0; }
+            0 { transform: scale(0.3); opacity: 0; }
             50% { transform: scale(1.2); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
         }
@@ -74,7 +74,7 @@
         <section id="screen-welcome" class="w-full max-w-lg glass rounded-3xl border border-white/60 p-8 shadow-xl text-center space-y-6 transition-all duration-300">
             <div class="space-y-2">
                 <div class="inline-block px-4 py-1.5 bg-rose-100 text-rose-700 text-sm font-extrabold rounded-full mb-2">
-                    ⚡ 跨裝置即時競技模式
+                    ⚡ 跨裝置即時智慧教學模式
                 </div>
                 <h2 class="text-3xl font-extrabold text-slate-800">打倒病媒蚊！</h2>
                 <p class="text-slate-500">在限定時間內，找出所有潛藏的病媒蚊孳生容器。</p>
@@ -128,6 +128,7 @@
                 <ul class="text-xs text-teal-700 space-y-1 font-medium leading-relaxed">
                     <li>• 仔細尋找畫面中「可能積水」的容器並點擊。</li>
                     <li>• 每點對一個即可「消滅病媒蚊孳生源」！</li>
+                    <li>• <span class="text-rose-600 font-bold">💡 閱讀彩蛋：</span>點擊到衛教點時，<b>計時器會自動暫停</b>，不佔用你的過關時間，請放心閱讀！</li>
                     <li>• <span class="text-rose-600 font-bold">注意：</span>亂點會被扣秒數懲罰（每次 +3 秒）。</li>
                 </ul>
             </div>
@@ -169,7 +170,7 @@
                 <!-- Timer & Score -->
                 <div class="flex items-center gap-4">
                     <div class="text-right">
-                        <div class="text-xs font-bold text-slate-400">累計時間</div>
+                        <div class="text-xs font-bold text-slate-400">累計時間 <span id="timer-status-indicator" class="text-[10px] bg-amber-500 text-white px-1 py-0.5 rounded hidden">已暫停</span></div>
                         <div class="text-xl font-black text-rose-600 font-mono" id="hud-timer">00:00.00</div>
                     </div>
                     <div class="text-right">
@@ -194,10 +195,10 @@
                 <div id="game-click-layer" class="absolute inset-0 z-20 cursor-crosshair" onclick="handleBoardClick(event)"></div>
 
                 <!-- Found Hotspots Render Layer (Adds checked badges / marks) -->
-                <div id="found-markers-layer" class="absolute inset-0 z-25 pointer-events-none"></div>
+                <div id="found-markers-layer" class="absolute inset-0 z-30 pointer-events-none"></div>
 
                 <!-- Feedback Text overlay (like +3s, etc.) -->
-                <div id="feedback-layer" class="absolute inset-0 z-30 pointer-events-none overflow-hidden"></div>
+                <div id="feedback-layer" class="absolute inset-0 z-40 pointer-events-none overflow-hidden"></div>
             </div>
 
             <!-- Bottom Instruction Tip -->
@@ -316,7 +317,9 @@
                         <i class="fa-solid fa-map-location-dot"></i>
                         <span>2. 關卡自訂圖片與熱點設定 (編輯模式)</span>
                     </h4>
-                    <p class="text-xs text-slate-500">在預覽圖上可<b>「按住拖曳」</b>綠色圓標來微調位置。在熱點列表中<b>「雙擊 (Double Click) 說明文字」</b>即可進行快速 Inline 編輯修改，無須重打！</p>
+                    <p class="text-xs text-slate-500">
+                        💡 <b>進階技巧：</b>如果您在名稱開頭加上 <b>[衛教]</b> (例如：「[衛教]冷水壺」)，該熱點被點擊時會彈出知識視窗，但<b>不列入必須過關的清除進度中</b>喔！適合用來增加探索趣味！
+                    </p>
 
                     <!-- Selector -->
                     <div class="grid grid-cols-2 gap-4">
@@ -372,7 +375,7 @@
                 <div class="border-t border-slate-100 pt-6 space-y-3">
                     <h4 class="text-sm font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fa-solid fa-file-export"></i>
-                        <span>3. 進階：匯出與慢速匯入關卡配置座標</span>
+                        <span>3. 進階：匯出與匯入關卡配置座標</span>
                     </h4>
                     <p class="text-xs text-slate-500">為了避免更換裝置或重新整理網頁時設定跑掉，您可以使用以下功能將熱點座標匯出成備份文字，直接貼給 AI，我幫您「寫死」在程式中！</p>
                     <div class="flex gap-2">
@@ -388,7 +391,6 @@
 
             <!-- Footer -->
             <div class="px-6 py-4 border-t border-slate-100 flex justify-between gap-2 bg-slate-50 rounded-b-3xl">
-                <!-- ✅ 新增：還原預設按鈕 -->
                 <button onclick="resetToDefaultConfigs()" class="px-4 py-2.5 bg-rose-100 text-rose-600 hover:bg-rose-200 hover:text-rose-700 font-bold text-xs rounded-xl transition flex items-center gap-2">
                     <i class="fa-solid fa-rotate-left"></i> 清除記憶並還原最新預設
                 </button>
@@ -426,7 +428,7 @@
         // -------------------------------------------------------------------------
         // 🚨 【設定步驟 2】 進入後台密碼（預設為 6888）。
         // -------------------------------------------------------------------------
-        var TEACHER_PASSWORD = "6828"; 
+        var TEACHER_PASSWORD = "6888"; 
 
 
         // =========================================================================
@@ -488,6 +490,10 @@
         var gasWebappUrl = "";
         var isDragging = false;
         var activeDragSpotId = null;
+
+        // 🧠 新增：時間暫停狀態與變數，確保學生閱讀衛教說明時「時間完全靜止」！
+        var isTimerPaused = false;
+        var pauseStartTime = 0;
 
         var AudioSynth = {
             ctx: null,
@@ -684,7 +690,7 @@
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(function() {
-                if (gameFinished) return;
+                if (gameFinished || isTimerPaused) return; // 💡 暫停時不計時
                 elapsedTime = (performance.now() - startTime) / 1000;
                 document.getElementById('hud-timer').innerText = formatTime(elapsedTime);
             }, 33);
@@ -698,7 +704,7 @@
         }
 
         function handleBoardClick(e) {
-            if (gameFinished) return;
+            if (gameFinished || isTimerPaused) return; // 💡 暫停時不接受任何背景點擊
             var clickLayer = document.getElementById('game-click-layer');
             var rect = clickLayer.getBoundingClientRect();
             var clickX = ((e.clientX - rect.left) / rect.width) * 100;
@@ -709,11 +715,17 @@
 
             for (var i = 0; i < currentLevel.hotspots.length; i++) {
                 var spot = currentLevel.hotspots[i];
-                if (foundHotspots.indexOf(spot.id) !== -1) continue;
                 var distance = Math.sqrt(Math.pow(clickX - spot.x, 2) + Math.pow(clickY - spot.y, 2));
                 if (distance <= spot.r) {
                     foundMatch = true;
-                    handleSuccessfulHit(spot, clickX, clickY);
+                    
+                    // 🎯 核心升級：若該點已經找過了，跳出綠色文字提示，絕對不扣分（也不重複加分），避免學生有挫折感
+                    if (foundHotspots.indexOf(spot.id) !== -1) {
+                        createVisualFeedback(clickX, clickY, "✔️ 已經找過囉！", "text-emerald-600 font-extrabold text-sm drop-shadow-md animate-floatText absolute");
+                        AudioSynth.playHit(); 
+                    } else {
+                        handleSuccessfulHit(spot, clickX, clickY);
+                    }
                     break;
                 }
             }
@@ -726,12 +738,22 @@
             AudioSynth.playHit();
 
             createVisualFeedback(x, y, "💥", "text-rose-500 font-extrabold text-2xl scale-150 animate-ping absolute");
-            createSuccessMarker(x, y, spot.name);
+            
+            // 🎯 優化：大勾勾現在「精準鎖定並出現在物件正中央」，不再因為點擊偏邊而歪掉
+            createSuccessMarker(spot.x, spot.y, spot.name);
 
-            // 判斷是否為衛教熱點 (相容舊版語法)
+            // 判斷是否為衛教熱點 
             var isEducational = spot.name && spot.name.indexOf("[衛教]") === 0;
             var title = isEducational ? "💡 衛教小貼士" : "✨ 發現孳生源！";
             var cleanName = spot.name ? spot.name.replace("[衛教]", "").trim() : "";
+
+            // 💡 核心機制變革：在彈出視窗顯示時，自動暫停背景計時，確保學生不被時間壓力追趕，能安心閱讀！
+            if (!gameFinished) {
+                isTimerPaused = true;
+                pauseStartTime = performance.now();
+                var pauseIndicator = document.getElementById('timer-status-indicator');
+                if (pauseIndicator) pauseIndicator.classList.remove('hidden');
+            }
 
             showAlert("success", title, "<strong>【" + cleanName + "】</strong><br><span class=\"text-slate-600 font-medium text-xs leading-relaxed mt-2 block\">" + spot.desc + "</span>");
 
@@ -778,7 +800,8 @@
         function createSuccessMarker(x, y, name) {
             var layer = document.getElementById('found-markers-layer');
             var marker = document.createElement('div');
-            marker.className = "absolute w-10 h-10 bg-emerald-500/80 border-2 border-white rounded-full flex items-center justify-center text-white text-sm shadow-md transition-all duration-300 animate-splat";
+            // ✅ 加大打勾符號，加粗邊框與立體陰影，讓它超級明顯
+            marker.className = "absolute w-12 h-12 bg-emerald-500 border-4 border-white rounded-full flex items-center justify-center text-white text-xl shadow-xl transition-all duration-300 animate-splat";
             marker.style.left = x + "%"; marker.style.top = y + "%";
             marker.style.transform = 'translate(-50%, -50%)';
             marker.innerHTML = '<i class="fa-solid fa-check"></i>';
@@ -875,7 +898,7 @@
                     .then(function(res) { if (!res.ok) throw new Error("HTTP 狀態碼錯誤"); return res.json(); })
                     .then(function(data) { callback(data); })
                     .catch(function(err) {
-                        console.error("雲端分數獲取失敗，改讀本地：", err);
+                        console.error("GAS 雲端分數獲取失敗，改讀本地：", err);
                         callback(JSON.parse(localStorage.getItem('dengue_scores') || '[]'));
                     });
             } catch (e) {
@@ -928,6 +951,17 @@
         function closeAlert() {
             var alertModal = document.getElementById('custom-alert');
             alertModal.classList.add('hidden'); alertModal.classList.remove('flex');
+
+            // 💡 核心機制變革：當對話框關閉時，將「暫停期間的時間差」加回遊戲啟動時間中，使這段閱讀時間完全被抵消不計！
+            if (isTimerPaused) {
+                isTimerPaused = false;
+                var pauseEndTime = performance.now();
+                var pauseDuration = pauseEndTime - pauseStartTime;
+                startTime += pauseDuration; // 完美抵消這段時間！
+                var pauseIndicator = document.getElementById('timer-status-indicator');
+                if (pauseIndicator) pauseIndicator.classList.add('hidden');
+            }
+
             if (activeAlertCallback) { var cb = activeAlertCallback; activeAlertCallback = null; cb(); }
         }
 
@@ -1005,6 +1039,7 @@
             activeDragSpotId = parseInt(e.currentTarget.id.replace('drag-marker-', ''));
         }
 
+        // Drag positioning helper
         function updateSpotPosition(spotId, x, y) {
             var spot = gameData.levels[selectedEditorLevel].hotspots.find(function(h) { return h.id === spotId; });
             if (spot) {
@@ -1163,9 +1198,9 @@
             if (!document.getElementById('screen-game').classList.contains('hidden')) loadLevel(currentLevelIndex);
         }
 
-        // ✅ 新增：清除記憶體並重新整理
+        // 清除本機微調記憶，強制使用預設最新座標與說明的後台按鈕
         function resetToDefaultConfigs() {
-            if (confirm("【警告】這將會清除這台設備上的舊有微調記憶，並強制載入最新的「衛教熱點」預設值。確定要繼續嗎？")) {
+            if (confirm("【警告】這將會清除這台設備上的舊有微調記憶，並強制載入最新的「衛教熱點」與新文字預設值。確定要繼續嗎？")) {
                 localStorage.removeItem('dengue_game_config');
                 location.reload();
             }
@@ -1264,7 +1299,7 @@
 "  ]);\n" +
 "  return createJSONOutput({ status: \"success\", message: \"Score saved successfully.\" });\n" +
 "}\n\n" +
-"function createJSONOutput(obj) {\n" +
+"function createJSONOutput(obj) { \n" +
 "  return ContentService.createTextOutput(JSON.stringify(obj))\n" +
 "    .setMimeType(ContentService.MimeType.JSON);\n" +
 "}";
