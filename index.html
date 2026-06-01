@@ -343,7 +343,7 @@
                                     <th class="p-2">X (%)</th>
                                     <th class="p-2">Y (%)</th>
                                     <th class="p-2">容器名稱 / 說明 (雙擊文字可編輯)</th>
-                                    <th class="p-2 text-center">判定半徑 r (%)</th>
+                                    <th class="p-2 text-center">判定半義 r (%)</th>
                                     <th class="p-2 text-center">操作</th>
                                 </tr>
                             </thead>
@@ -395,15 +395,19 @@
 
 
     <script>
+        // ================= PRESET BACKEND SETTINGS =================
+        // 🚨 老師請在此貼上您的 GAS 網頁應用程式網址！
+        // 預先埋入後，任何學生設備掃描開啟均會自動同步名冊，無須再次手動輸入！
+        const DEFAULT_GAS_URL = ""; 
+        const TEACHER_PASSWORD = "888"; // 預設進後台密碼，防護學生誤闖，可任意修改
+
         // ================= GAME DATABASE & STATE =================
-        // 這裡已經為您永久寫入您剛剛親自微調好的完美積水點與判定半徑！
-        // 並且精確連結您 GitHub 上的「indoor.png」與「outdoor.png」
         let gameData = {
             levels: [
                 {
                     levelNum: 1,
                     title: "第一關：室內廚房危機",
-                    bgImg: "indoor.png", // 優先抓取與 HTML 同目錄下的「indoor.png」
+                    bgImg: "indoor.png", 
                     backupBgImg: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=1200", 
                     hotspots: [
                         { id: 1, x: 3.5, y: 31, r: 9, name: "窗台花盆底盤", desc: "花盆底盤積水是室內最常見的斑蚊孳生地點，需定期倒水清洗。" },
@@ -417,7 +421,7 @@
                 {
                     levelNum: 2,
                     title: "第二關：室外庭院清源",
-                    bgImg: "outdoor.png", // 優先抓取與 HTML 同目錄下的「outdoor.png」
+                    bgImg: "outdoor.png", 
                     backupBgImg: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&q=80&w=1200",
                     hotspots: [
                         { id: 3, x: 47.5, y: 81, r: 12, name: "露天雨後地面積水", desc: "不平整的水泥地 or 石板路雨後易積水，應及時填平或掃乾淨。" },
@@ -554,8 +558,11 @@
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('dengue_gas_url')) {
                 gasWebappUrl = localStorage.getItem('dengue_gas_url');
-                document.getElementById('setting-gas-url').value = gasWebappUrl;
+            } else {
+                gasWebappUrl = DEFAULT_GAS_URL;
             }
+            document.getElementById('setting-gas-url').value = gasWebappUrl;
+            
             if (localStorage.getItem('dengue_game_config')) {
                 gameData = JSON.parse(localStorage.getItem('dengue_game_config'));
             }
@@ -1019,6 +1026,13 @@
         function toggleSettings() {
             const modal = document.getElementById('modal-settings');
             if (modal.classList.contains('hidden')) {
+                // Settings is currently hidden. Prompt password to lock students out!
+                const pwd = prompt("【安全鎖保護】請輸入教師管理密碼以進入設定面板：\n(預設密碼為 888)");
+                if (pwd === null) return; // Canceled
+                if (pwd !== TEACHER_PASSWORD) {
+                    showAlert("warning", "拒絕存取", "您輸入的教師管理密碼不正確！");
+                    return;
+                }
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
                 loadEditorLevel();
@@ -1421,7 +1435,90 @@ function doPost(e) {
   }
 }
 
-// ... existing code ...`;
+function handleGetRoster() {
+  let sheet = SPREADSHEET.getSheetByName("學生名冊");
+  if (!sheet) {
+    sheet = SPREADSHEET.insertSheet("學生名冊");
+    sheet.appendRow(["班級", "座號", "姓名"]);
+    sheet.appendRow(["701", "1", "陳大同"]);
+    sheet.appendRow(["701", "2", "林小美"]);
+    sheet.appendRow(["702", "1", "王大胖"]);
+    sheet.appendRow(["708", "1", "張君雅"]);
+    sheet.setFrozenRows(1);
+  }
+  
+  const data = sheet.getDataRange().getValues();
+  let roster = { classes: [], students: {} };
+  
+  if (data.length > 1) {
+    for (let i = 1; i < data.length; i++) {
+      let className = data[i][0] ? data[i][0].toString().trim() : "";
+      let seat = data[i][1] ? data[i][1].toString().trim() : "";
+      let name = data[i][2] ? data[i][2].toString().trim() : "";
+      
+      if (!className || !name) continue;
+      
+      if (!roster.classes.includes(className)) {
+        roster.classes.push(className);
+        roster.students[className] = [];
+      }
+      roster.students[className].push({ seat: seat, name: name });
+    }
+  }
+  roster.classes.sort();
+  return createJSONOutput(roster);
+}
+
+function handleGetScores() {
+  const sheets = SPREADSHEET.getSheets();
+  let allScores = [];
+  
+  sheets.forEach(sheet => {
+    if (sheet.getName() === "學生名冊") return;
+    const data = sheet.getDataRange().getValues();
+    if (data.length > 1) {
+      for (let i = 1; i < data.length; i++) {
+        allScores.push({
+          id: data[i][0] ? data[i][0].toString() : "",
+          class: data[i][1] ? data[i][1].toString() : "",
+          name: data[i][2] ? data[i][2].toString() : "",
+          rawTime: data[i][3] ? parseFloat(data[i][3]) : 0,
+          mistakes: data[i][4] ? parseInt(data[i][4]) : 0,
+          finalScore: data[i][5] ? parseFloat(data[i][5]) : 0,
+          date: data[i][6] ? Utilities.formatDate(new Date(data[i][6]), "GMT+8", "yyyy-MM-dd") : ""
+        });
+      }
+    }
+  });
+  return createJSONOutput(allScores);
+}
+
+function handleAddScore(score) {
+  const sheetName = score.class;
+  let sheet = SPREADSHEET.getSheetByName(sheetName);
+  
+  if (!sheet) {
+    sheet = SPREADSHEET.insertSheet(sheetName);
+    sheet.appendRow(["唯一識別碼", "班級", "學生姓名", "遊玩原始秒數", "失誤次數", "最終總秒數(成績)", "記錄日期"]);
+    sheet.setFrozenRows(1);
+  }
+  
+  sheet.appendRow([
+    score.id,
+    score.class,
+    score.name,
+    score.rawTime,
+    score.mistakes,
+    score.finalScore,
+    new Date()
+  ]);
+  return createJSONOutput({ status: "success", message: "Score saved successfully." });
+}
+
+function createJSONOutput(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
 
             const tempText = document.createElement('textarea');
             tempText.value = gasCode;
