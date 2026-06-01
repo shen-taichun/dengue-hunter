@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登革熱獵人 - 孳生源清除大作戰</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Custom animations */
+        @keyframes splat {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-splat {
+            animation: splat 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes floatText {
+            0% { transform: translateY(0px); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+        }
+        .animate-floatText {
+            animation: floatText 1.2s ease-out forwards;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 via-teal-100 to-cyan-100 min-height-screen text-slate-800 overflow-x-hidden antialiased">
+
+    <!-- TOP HEADER BAR -->
+    <header class="w-full py-4 px-6 flex justify-between items-center bg-white/60 backdrop-blur-md border-b border-teal-100/50 sticky top-0 z-40 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center text-white text-xl shadow-md shadow-teal-200">
+                <i class="fa-solid fa-mosquito"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-teal-800 tracking-wide">登革熱獵人</h1>
+                <p class="text-xs text-teal-600 font-bold">孳生源清除大作戰</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- Roster Status Indicator -->
+            <div id="roster-status" class="hidden text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full font-bold flex items-center gap-1">
+                <i class="fa-solid fa-cloud-check animate-pulse"></i>
+                <span>雲端名冊已載入</span>
+            </div>
+            <button onclick="toggleSettings()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition duration-200" title="教師設定">
+                <i class="fa-solid fa-gear text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="max-w-6xl mx-auto px-4 py-6 min-h-[calc(100vh-80px)] flex flex-col justify-center items-center">
+        
+        <!-- ================= WELCOME / LOGIN SCREEN ================= -->
+        <section id="screen-welcome" class="w-full max-w-lg glass rounded-3xl border border-white/60 p-8 shadow-xl text-center space-y-6 transition-all duration-300">
+            <div class="space-y-2">
+                <div class="inline-block px-4 py-1.5 bg-rose-100 text-rose-700 text-sm font-extrabold rounded-full mb-2">
+                    ⚡ 跨裝置即時競技模式
+                </div>
+                <h2 class="text-3xl font-extrabold text-slate-800">打倒病媒蚊！</h2>
+                <p class="text-slate-500">在限定時間內，找出所有潛藏的病媒蚊孳生容器。</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="space-y-4 text-left">
+                <!-- Class Selection -->
+                <div>
+                    <label class="block text-sm font-extrabold text-slate-600 mb-2">
+                        <i class="fa-solid fa-school text-teal-500 mr-1.5"></i> 選擇你的班級
+                    </label>
+                    <div class="relative">
+                        <select id="input-class" onchange="handleClassChange()" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 appearance-none font-bold text-slate-700">
+                            <!-- Default Classes - Will be dynamically overridden if spreadsheet roster is available -->
+                            <option value="701">701 班</option>
+                            <option value="702">702 班</option>
+                            <option value="703">703 班</option>
+                            <option value="704">704 班</option>
+                            <option value="705">705 班</option>
+                            <option value="教師測試">教師/訪客 測試</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-teal-500">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Name Selection / Input (Adaptive container) -->
+                <div>
+                    <label class="block text-sm font-extrabold text-slate-600 mb-2">
+                        <i class="fa-solid fa-user text-teal-500 mr-1.5"></i> 選擇或輸入你的姓名
+                    </label>
+                    <div id="student-name-input-container">
+                        <!-- Standard Text Input (Fallback default) -->
+                        <input type="text" id="input-name" placeholder="例如：林小明" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 font-bold text-slate-700 placeholder-slate-400">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Guide -->
+            <div class="bg-teal-50/80 rounded-2xl p-4 border border-teal-100 text-left space-y-2">
+                <h4 class="text-sm font-extrabold text-teal-800"><i class="fa-solid fa-circle-info mr-1"></i> 闖關小秘訣：</h4>
+                <ul class="text-xs text-teal-700 space-y-1 font-medium leading-relaxed">
+                    <li>• 仔細尋找畫面中「可能積水」的容器並點擊。</li>
+                    <li>• 每點對一個即可「消滅病媒蚊孳生源」！</li>
+                    <li>• <span class="text-rose-600 font-bold">注意：</span>亂點會被扣秒數懲罰（每次 +3 秒）。</li>
+                </ul>
+            </div>
+
+            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold text-lg rounded-2xl shadow-lg shadow-teal-200 hover:shadow-xl hover:shadow-teal-300 transform active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+                <span>進入遊戲</span>
+                <i class="fa-solid fa-circle-play"></i>
+            </button>
+        </section>
+
+
+        <!-- ================= GAMEPLAY SCREEN ================= -->
+        <section id="screen-game" class="w-full hidden flex-col items-center gap-4 transition-all duration-300">
+            <!-- HUD (Status Bar) -->
+            <div class="w-full max-w-4xl flex flex-wrap justify-between items-center bg-white/80 backdrop-blur-md border border-teal-100 rounded-2xl p-4 gap-4 shadow-sm">
+                <!-- Info Left -->
+                <div class="flex items-center gap-4">
+                    <div class="px-3.5 py-1.5 bg-teal-100 text-teal-800 text-sm font-black rounded-lg">
+                        關卡 <span id="hud-level-num">1</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-400">目前挑戰者</div>
+                        <div class="text-sm font-black text-slate-700" id="hud-player-info">班級 - 姓名</div>
+                    </div>
+                </div>
+
+                <!-- Found Progress -->
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-400">已清除孳生源</div>
+                        <div class="text-sm font-black text-slate-700"><span id="hud-found-count">0</span> / <span id="hud-total-count">0</span></div>
+                    </div>
+                    <!-- Progress Bar container -->
+                    <div class="w-24 h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                        <div id="hud-progress-bar" class="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Timer & Score -->
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-400">累計時間</div>
+                        <div class="text-xl font-black text-rose-600 font-mono" id="hud-timer">00:00.00</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-400">誤點失誤</div>
+                        <div class="text-sm font-black text-amber-600" id="hud-mistakes">0 次</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- THE GAME BOARD CONTAINER -->
+            <div class="w-full max-w-4xl relative bg-slate-900 rounded-3xl overflow-hidden shadow-2xl aspect-[1.6] border-4 border-white" id="game-board-container">
+                <!-- Fallback Background (in case image fails to load) -->
+                <div class="absolute inset-0 flex flex-col justify-center items-center text-slate-500 p-8 text-center bg-slate-800 z-0">
+                    <i class="fa-solid fa-spinner animate-spin text-4xl mb-4 text-teal-400"></i>
+                    <p class="text-sm font-bold">載入關卡場景中...</p>
+                </div>
+
+                <!-- Level Background Image -->
+                <img id="game-bg-image" src="" alt="關卡場景" class="absolute inset-0 w-full h-full object-cover select-none pointer-events-none z-10 opacity-0 transition-opacity duration-300" onload="this.style.opacity='1'">
+
+                <!-- Interaction / Click Mask -->
+                <div id="game-click-layer" class="absolute inset-0 z-20 cursor-crosshair" onclick="handleBoardClick(event)"></div>
+
+                <!-- Found Hotspots Render Layer (Adds checked badges / marks) -->
+                <div id="found-markers-layer" class="absolute inset-0 z-25 pointer-events-none"></div>
+
+                <!-- Feedback Text overlay (like +3s, etc.) -->
+                <div id="feedback-layer" class="absolute inset-0 z-30 pointer-events-none overflow-hidden"></div>
+            </div>
+
+            <!-- Bottom Instruction Tip -->
+            <div class="text-slate-500 text-sm font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-hand-pointer animate-bounce"></i>
+                <span>請仔細觀察圖片，點擊可能積水的任何容器、凹陷、底盤。</span>
+            </div>
+        </section>
+
+
+        <!-- ================= RANKING / LEADERBOARD SCREEN ================= -->
+        <section id="screen-scoreboard" class="w-full max-w-2xl hidden glass rounded-3xl border border-white/60 p-8 shadow-xl space-y-6 transition-all duration-300 text-center">
+            <div class="space-y-2">
+                <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto shadow-md">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-3xl font-extrabold text-slate-800">
+                    <span id="score-class-title">---</span> 班級排行榜
+                </h2>
+                <p class="text-slate-500">清除速度越快、失誤越少，名次越前面！</p>
+            </div>
+
+            <!-- Tabs/Filter -->
+            <div class="flex justify-center gap-2 bg-slate-100 p-1.5 rounded-2xl">
+                <button onclick="filterRank('current')" id="btn-filter-current" class="flex-1 py-2 rounded-xl text-sm font-extrabold bg-white text-teal-800 shadow-sm transition">
+                    本班級排名
+                </button>
+                <button onclick="filterRank('all')" id="btn-filter-all" class="flex-1 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-white/50 transition">
+                    全校總榜
+                </button>
+            </div>
+
+            <!-- Scoreboard Table -->
+            <div class="overflow-hidden border border-slate-100 rounded-2xl bg-white shadow-inner max-h-[300px] overflow-y-auto">
+                <table class="w-full border-collapse text-left">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-400 text-xs font-extrabold uppercase tracking-wider border-b border-slate-100">
+                            <th class="py-3 px-4 text-center">名次</th>
+                            <th class="py-3 px-4">挑戰者</th>
+                            <th class="py-3 px-4 text-center">累計成績</th>
+                            <th class="py-3 px-4 text-center">失誤罰時</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body" class="text-slate-700 text-sm font-bold">
+                        <!-- Dynamic ranks insertion -->
+                        <tr>
+                            <td colspan="4" class="py-8 text-center text-slate-400">載入排行榜中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="resetToWelcome()" class="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-2xl transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-rotate-left"></i>
+                    <span>返回首頁</span>
+                </button>
+                <button onclick="shareScore()" class="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>分享成績</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= TEACHER SETTINGS MODAL ================= -->
+    <div id="modal-settings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl">
+                <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-teal-500"></i>
+                    <span>教師後台 & 熱點編輯器</span>
+                </h3>
+                <button onclick="toggleSettings()" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6 space-y-6">
+                <!-- Gas Configuration -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>1. 雲端試算表 (GAS) 串接與名冊設定</span>
+                    </h4>
+                    <p class="text-xs text-slate-500">串接後網頁會自動抓取名冊，並動態產生班級、姓名下拉選單。下方的腳本已經為您升級了自動名冊抓取功能！</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="setting-gas-url" placeholder="請輸入部署後的 GAS Web App URL" class="flex-1 px-4 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-100 outline-none transition font-medium">
+                        <button onclick="saveGasUrl()" class="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white text-sm font-bold rounded-xl transition">
+                            儲存網址
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Copy Instructions -->
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-black text-slate-600">升級版 GAS 後端試算表腳本 (Copy & Paste)</span>
+                        <button onclick="copyGasCode()" class="text-xs text-teal-600 hover:text-teal-700 font-extrabold flex items-center gap-1">
+                            <i class="fa-solid fa-copy"></i> 複製程式碼
+                        </button>
+                    </div>
+                    <div class="text-xs text-slate-400 leading-relaxed font-medium">
+                        <strong>快速名冊設置指南：</strong><br>
+                        1. 複製並部署下方的 GAS 程式碼。<br>
+                        2. 部署成功後，首次開啟網頁，腳本會自動在您的試算表中建立名為 <b>【學生名冊】</b> 的分頁。<br>
+                        3. 請在 <b>【學生名冊】</b> 工作表中，輸入您的班級、座號、姓名。網頁端隨後便會即時更新！
+                    </div>
+                </div>
+
+                <!-- Image and Hotspot Customization Editor -->
+                <div class="space-y-4 border-t border-slate-100 pt-6">
+                    <h4 class="text-sm font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        <span>2. 關卡自訂圖片與熱點設定 (編輯模式)</span>
+                    </h4>
+                    <p class="text-xs text-slate-500">在預覽圖上可<b>「按住拖曳」</b>綠色圓標來微調位置。在熱點列表中<b>「雙擊 (Double Click) 說明文字」</b>即可進行快速 Inline 編輯修改，無須重打！</p>
+
+                    <!-- Selector -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">編輯關卡</label>
+                            <select id="editor-level-select" onchange="loadEditorLevel()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl font-bold">
+                                <option value="0">第一關（室內廚房）</option>
+                                <option value="1">第二關（室外庭院）</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">自訂背景圖 (填入網址或使用本地圖)</label>
+                            <input type="text" id="editor-img-url" placeholder="輸入圖片 URL (或將檔案命名為 indoor.png/outdoor.png 放在同目錄)" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none" onchange="updateEditorBg()">
+                        </div>
+                    </div>
+
+                    <!-- Sandbox Interactive Clicker Map -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-black text-slate-600">熱點設定面板 (點擊空白處可新增熱點，<b>「雙擊標記」</b>可快速更名，<b>「拖曳標記」</b>可任意移動)</span>
+                            <button onclick="clearCurrentLevelHotspots()" class="text-xs text-rose-500 hover:text-rose-600 font-bold">
+                                <i class="fa-solid fa-trash-can"></i> 清空本關熱點
+                            </button>
+                        </div>
+                        
+                        <div class="relative bg-slate-100 rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 aspect-[1.6]" id="editor-map-container">
+                            <img id="editor-bg-preview" src="" class="absolute inset-0 w-full h-full object-cover z-10" alt="編輯預覽">
+                            <div class="absolute inset-0 z-20" onclick="handleEditorMapClick(event)"></div>
+                            <div id="editor-markers-layer" class="absolute inset-0 z-25 pointer-events-none"></div>
+                        </div>
+                    </div>
+
+                    <!-- Hotspots Table List -->
+                    <div class="max-h-[180px] overflow-y-auto border border-slate-100 rounded-xl">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-2">X (%)</th>
+                                    <th class="p-2">Y (%)</th>
+                                    <th class="p-2">容器名稱 / 說明 (雙擊文字可編輯)</th>
+                                    <th class="p-2 text-center">判定半徑 r (%)</th>
+                                    <th class="p-2 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="editor-hotspots-list" class="font-medium text-slate-600">
+                                <!-- Dynamic lines -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2 bg-slate-50 rounded-b-3xl">
+                <button onclick="saveAllConfigs()" class="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-extrabold text-sm rounded-xl shadow-md transition transform active:scale-95">
+                    保存設定並套用遊戲
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= CUSTOM DIALOG MODAL (SAVES ALERT FRUSTRATION) ================= -->
+    <div id="custom-alert" class="fixed inset-0 z-50 hidden flex justify-center items-center p-4 bg-slate-950/40 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4 border border-slate-100 animate-splat">
+            <div id="alert-icon" class="w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm">
+                <!-- icon dynamically inserted -->
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-800" id="alert-title">標題</h3>
+            <p class="text-sm font-bold text-slate-500" id="alert-text">內文</p>
+            <button onclick="closeAlert()" id="alert-btn" class="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-sm rounded-xl transition">
+                確定
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        // ================= GAME DATABASE & STATE =================
+        let gameData = {
+            levels: [
+                {
+                    levelNum: 1,
+                    title: "第一關：室內廚房危機",
+                    bgImg: "indoor.png", // 預設讀取同目錄下的 indoor.png 檔案
+                    backupBgImg: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=1200", 
+                    hotspots: [
+                        { id: 1, x: 3.5, y: 31.0, r: 6.5, name: "窗台花盆底盤", desc: "花盆底盤積水是室內最常見的斑蚊孳生地點，需定期倒水清洗。" },
+                        { id: 2, x: 15.5, y: 52.0, r: 8.5, name: "廚房水槽碗碟積水", desc: "水槽中堆疊的未洗碗盤容易積水，即使一小口水也能讓蚊子產卵。" },
+                        { id: 3, x: 72.0, y: 36.5, r: 6.5, name: "飲水機水盤", desc: "飲水機接水盤、冰箱除霜水盤都是極易被遺忘的室內積水點。" },
+                        { id: 4, x: 86.8, y: 49.5, r: 8.0, name: "浴室放置過久的水桶", desc: "未蓋蓋子的盛水容器是蚊子最愛的產卵天堂，需落實「倒、刷」工作。" }
+                    ]
+                },
+                {
+                    levelNum: 2,
+                    title: "第二關：室外庭院清源",
+                    bgImg: "outdoor.png", // 預設讀取同目錄下的 outdoor.png 檔案
+                    backupBgImg: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&q=80&w=1200",
+                    hotspots: [
+                        { id: 1, x: 13.5, y: 64.5, r: 12.0, name: "廢棄堆疊輪胎", desc: "輪胎內部凹槽極易積水，且黑色吸熱吸引蚊子，已對點擊判定大幅放大！點選輪胎區即可清除。" },
+                        { id: 2, x: 4.5, y: 60.5, r: 10.0, name: "露天金屬鐵桶", desc: "閒置的大型容器下雨時迅速積水，已放大感應區，必須倒置或蓋上細紗網。" },
+                        { id: 3, x: 47.5, y: 81.0, r: 8.5, name: "防塵塑膠布褶皺", desc: "覆蓋雜物的塑膠帆布凹槽極易在雨後產生水袋積水，須拉平拉直。" },
+                        { id: 4, x: 58.0, y: 86.0, r: 10.0, name: "露天雨後地面積水", desc: "不平整的水泥地 or 石板路雨後易積水，應及時填平或掃乾淨。" },
+                        { id: 5, x: 25.5, y: 22.0, r: 7.5, name: "大樹隱蔽樹洞", desc: "樹洞與竹筒也是病媒蚊隱秘的自然繁殖場所，可用泥沙填塞。" }
+                    ]
+                }
+            ]
+        };
+
+        // User profile & tracking state
+        let playerClass = "701";
+        let playerName = "";
+        let currentLevelIndex = 0;
+        let foundHotspots = [];
+        let totalMistakes = 0;
+        let scoreList = [];
+        
+        // Roster data storage (loaded from GAS)
+        let cloudRosterData = null; 
+        
+        // Timer state variables
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let gameFinished = false;
+
+        // Configuration variables
+        let gasWebappUrl = "";
+
+        // Drag-and-Drop Global Editor State
+        let isDragging = false;
+        let activeDragSpotId = null;
+
+        // Web Audio API Synth wrapper (Avoids dependency on external sound files)
+        const AudioSynth = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playHit() {
+                this.init();
+                const ctx = this.ctx;
+                const now = ctx.currentTime;
+                // Pop Sound
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+                
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                
+                osc.start(now);
+                osc.stop(now + 0.16);
+            },
+            playMiss() {
+                this.init();
+                const ctx = this.ctx;
+                const now = ctx.currentTime;
+                // Double buzz error sound
+                [0, 0.08].forEach(delay => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(120, now + delay);
+                    osc.frequency.linearRampToValueAtTime(80, now + delay + 0.07);
+                    
+                    gain.gain.setValueAtTime(0.2, now + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.07);
+                    
+                    osc.start(now + delay);
+                    osc.stop(now + delay + 0.08);
+                });
+            },
+            playLevelClear() {
+                this.init();
+                const ctx = this.ctx;
+                const now = ctx.currentTime;
+                // Major arpeggio
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C, E, G, C
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(freq, now + (idx * 0.1));
+                    gain.gain.setValueAtTime(0.15, now + (idx * 0.1));
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.1) + 0.3);
+                    
+                    osc.start(now + (idx * 0.1));
+                    osc.stop(now + (idx * 0.1) + 0.3);
+                });
+            },
+            playTriumph() {
+                this.init();
+                const ctx = this.ctx;
+                const now = ctx.currentTime;
+                // Joyful victory fanfare
+                const fanfare = [
+                    { f: 392.00, d: 0.1 },  // G
+                    { f: 523.25, d: 0.1 },  // C
+                    { f: 659.25, d: 0.1 },  // E
+                    { f: 783.99, d: 0.3 },  // G
+                    { f: 659.25, d: 0.1 },  // E
+                    { f: 783.99, d: 0.6 }   // G (Long)
+                ];
+                let currentOffset = 0;
+                fanfare.forEach(note => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(note.f, now + currentOffset);
+                    gain.gain.setValueAtTime(0.2, now + currentOffset);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + currentOffset + note.d);
+                    
+                    osc.start(now + currentOffset);
+                    osc.stop(now + currentOffset + note.d);
+                    currentOffset += note.d + 0.02;
+                });
+            }
+        };
+
+        // ================= LIFECYCLE & INITIALIZATION =================
+        window.addEventListener('DOMContentLoaded', () => {
+            // Load state from localStorage if available
+            if (localStorage.getItem('dengue_gas_url')) {
+                gasWebappUrl = localStorage.getItem('dengue_gas_url');
+                document.getElementById('setting-gas-url').value = gasWebappUrl;
+            }
+            if (localStorage.getItem('dengue_game_config')) {
+                gameData = JSON.parse(localStorage.getItem('dengue_game_config'));
+            }
+            
+            // Load cloud roster data if GAS is ready
+            fetchRosterFromCloud();
+
+            // Populate config editor panel on page load
+            loadEditorLevel();
+
+            // Set up Global Drag-and-Drop Mouse Move Listeners
+            window.addEventListener('mousemove', handleGlobalMouseMove);
+            window.addEventListener('mouseup', handleGlobalMouseUp);
+        });
+
+        // ================= CLOUD ROSTER ENGINE =================
+        function fetchRosterFromCloud() {
+            if (!gasWebappUrl) return;
+
+            fetch(`${gasWebappUrl}?action=getRoster`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.classes && data.classes.length > 0) {
+                        cloudRosterData = data;
+                        document.getElementById('roster-status').classList.remove('hidden');
+                        document.getElementById('roster-status').classList.add('flex');
+                        
+                        // Populate classes dropdown dynamically from spreadsheet data!
+                        populateClassesDropdown(data.classes);
+                    }
+                })
+                .catch(err => {
+                    console.warn("無法取得雲端名冊，採用手動輸入預設模式：", err);
+                });
+        }
+
+        function populateClassesDropdown(classes) {
+            const classSelect = document.getElementById('input-class');
+            classSelect.innerHTML = ''; // Clear default static options
+
+            classes.forEach(cls => {
+                const opt = document.createElement('option');
+                opt.value = cls;
+                opt.innerText = `${cls} 班`;
+                classSelect.appendChild(opt);
+            });
+
+            // Add standard test visitor option at the end
+            const testOpt = document.createElement('option');
+            testOpt.value = "教師測試";
+            testOpt.innerText = "教師/訪客 測試";
+            classSelect.appendChild(testOpt);
+
+            // Trigger roster dropdown update for the default first option
+            handleClassChange();
+        }
+
+        function handleClassChange() {
+            const classSelect = document.getElementById('input-class');
+            const selectedClass = classSelect.value;
+            const container = document.getElementById('student-name-input-container');
+
+            // If we have roster data loaded and class has a student list, turn text input into dropdown select!
+            if (cloudRosterData && cloudRosterData.students && cloudRosterData.students[selectedClass]) {
+                const students = cloudRosterData.students[selectedClass];
+                
+                // Sort by seat number
+                students.sort((a, b) => parseInt(a.seat || 0) - parseInt(b.seat || 0));
+
+                let dropdownHtml = `
+                    <div class="relative">
+                        <select id="input-name" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 appearance-none font-bold text-slate-700">
+                `;
+
+                students.forEach(student => {
+                    const label = student.seat ? `${student.seat}號 - ${student.name}` : student.name;
+                    dropdownHtml += `<option value="${student.name}">${label}</option>`;
+                });
+
+                dropdownHtml += `
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-teal-500">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = dropdownHtml;
+            } else {
+                // Fallback to basic manually-entered text box
+                container.innerHTML = `
+                    <input type="text" id="input-name" placeholder="例如：林小明" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 font-bold text-slate-700 placeholder-slate-400">
+                `;
+            }
+        }
+
+        // ================= FLOW CONTROL =================
+        function startGame() {
+            const classInput = document.getElementById('input-class');
+            const nameInput = document.getElementById('input-name');
+            
+            playerClass = classInput.value;
+            playerName = nameInput.value ? nameInput.value.trim() : "";
+
+            if (!playerName) {
+                showAlert("warning", "哎呀！", "請選擇或輸入您的姓名才能開始競賽。");
+                return;
+            }
+
+            // Initialize game state
+            currentLevelIndex = 0;
+            totalMistakes = 0;
+            gameFinished = false;
+            elapsedTime = 0;
+
+            // Update UI components
+            document.getElementById('hud-player-info').innerText = `${playerClass} - ${playerName}`;
+            document.getElementById('hud-mistakes').innerText = `${totalMistakes} 次`;
+
+            // Transition screens
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            // Load Level 1
+            loadLevel(0);
+            
+            // Start precision clock (using requestAnimationFrame for smooth timer rendering)
+            startTime = performance.now();
+            startTimer();
+        }
+
+        function loadLevel(index) {
+            currentLevelIndex = index;
+            const level = gameData.levels[index];
+            foundHotspots = [];
+
+            // Reset HUD progress
+            document.getElementById('hud-level-num').innerText = level.levelNum;
+            document.getElementById('hud-found-count').innerText = "0";
+            document.getElementById('hud-total-count').innerText = level.hotspots.length;
+            document.getElementById('hud-progress-bar').style.width = "0%";
+
+            // Clear markers and visual layers
+            document.getElementById('found-markers-layer').innerHTML = '';
+            document.getElementById('feedback-layer').innerHTML = '';
+
+            // Load level image with high-reliability fallback checks
+            const bgImgElement = document.getElementById('game-bg-image');
+            bgImgElement.src = level.bgImg;
+            
+            // Image load failure safety mechanism
+            bgImgElement.onerror = function() {
+                console.warn(`Local file ${level.bgImg} failed to load. Attempting online backup...`);
+                this.src = level.backupBgImg || "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=1200";
+            };
+        }
+
+        // ================= TIMER ENGINE =================
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (gameFinished) return;
+                const currentTime = performance.now();
+                elapsedTime = (currentTime - startTime) / 1000; // time in seconds
+                
+                // Render Timer text
+                document.getElementById('hud-timer').innerText = formatTime(elapsedTime);
+            }, 33); // Update at roughly 30 FPS
+        }
+
+        function formatTime(secs) {
+            const minutes = Math.floor(secs / 60);
+            const seconds = Math.floor(secs % 60);
+            const milliseconds = Math.floor((secs % 1) * 100);
+            
+            const minStr = minutes.toString().padStart(2, '0');
+            const secStr = seconds.toString().padStart(2, '0');
+            const msStr = milliseconds.toString().padStart(2, '0');
+            
+            return `${minStr}:${secStr}.${msStr}`;
+        }
+
+        // ================= PLAY INTERACTION & COLLISION =================
+        function handleBoardClick(e) {
+            if (gameFinished) return;
+
+            const clickLayer = document.getElementById('game-click-layer');
+            const rect = clickLayer.getBoundingClientRect();
+            
+            // Get click coordinate in percentage relative to board container size
+            const clickX = ((e.clientX - rect.left) / rect.width) * 100;
+            const clickY = ((e.clientY - rect.top) / rect.height) * 100;
+
+            const currentLevel = gameData.levels[currentLevelIndex];
+            let foundMatch = false;
+
+            for (let spot of currentLevel.hotspots) {
+                // Skip if this spot is already found
+                if (foundHotspots.includes(spot.id)) continue;
+
+                // Simple circular collision check using percentage coordinates
+                const distance = Math.sqrt(Math.pow(clickX - spot.x, 2) + Math.pow(clickY - spot.y, 2));
+                // Use the custom radius configured in the hotspot
+                if (distance <= spot.r) {
+                    foundMatch = true;
+                    handleSuccessfulHit(spot, clickX, clickY);
+                    break;
+                }
+            }
+
+            if (!foundMatch) {
+                handleMiss(clickX, clickY);
+            }
+        }
+
+        function handleSuccessfulHit(spot, x, y) {
+            foundHotspots.push(spot.id);
+            AudioSynth.playHit();
+
+            // Create hit visual feedback 💥
+            createVisualFeedback(x, y, "💥", "text-rose-500 font-extrabold text-2xl scale-150 animate-ping absolute");
+            
+            // Add a permanent green success marker on the game board
+            createSuccessMarker(x, y, spot.name);
+
+            // Pop informational notification dialog in-game
+            showAlert("success", `✨ 發現孳生源！`, `<strong>【${spot.name}】</strong><br><span class="text-slate-600 font-medium text-xs leading-relaxed mt-2 block">${spot.desc}</span>`);
+
+            // Update Progress HUD
+            const level = gameData.levels[currentLevelIndex];
+            const foundCount = foundHotspots.length;
+            const totalCount = level.hotspots.length;
+
+            document.getElementById('hud-found-count').innerText = foundCount;
+            const percentage = (foundCount / totalCount) * 100;
+            document.getElementById('hud-progress-bar').style.width = `${percentage}%`;
+
+            // Check Level Complete State
+            if (foundCount === totalCount) {
+                setTimeout(() => {
+                    handleLevelComplete();
+                }, 800);
+            }
+        }
+
+        // Penalty mistake handling
+        function handleMiss(x, y) {
+            totalMistakes++;
+            AudioSynth.playMiss();
+            
+            // Apply a 3-second mistake penalty to timer
+            startTime -= 3000; 
+
+            // Update mistake count HUD
+            document.getElementById('hud-mistakes').innerText = `${totalMistakes} 次`;
+
+            // Visual feedback elements
+            createVisualFeedback(x, y, "❌ 誤點罰時 +3秒", "text-rose-600 font-black text-sm drop-shadow-md animate-floatText absolute");
+        }
+
+        function createVisualFeedback(x, y, text, classes) {
+            const layer = document.getElementById('feedback-layer');
+            const element = document.createElement('div');
+            element.className = classes;
+            element.style.left = `${x}%`;
+            element.style.top = `${y}%`;
+            element.style.transform = 'translate(-50%, -50%)';
+            element.innerText = text;
+            
+            layer.appendChild(element);
+
+            // Garbage collection for temporary visual feedback nodes
+            setTimeout(() => {
+                element.remove();
+            }, 1500);
+        }
+
+        function createSuccessMarker(x, y, name) {
+            const layer = document.getElementById('found-markers-layer');
+            const marker = document.createElement('div');
+            marker.className = "absolute w-10 h-10 bg-emerald-500/80 border-2 border-white rounded-full flex items-center justify-center text-white text-sm shadow-md transition-all duration-300 animate-splat";
+            marker.style.left = `${x}%`;
+            marker.style.top = `${y}%`;
+            marker.style.transform = 'translate(-50%, -50%)';
+            marker.innerHTML = `<i class="fa-solid fa-check"></i>`;
+            marker.title = name;
+            
+            layer.appendChild(marker);
+        }
+
+        // ================= LEVEL RESOLUTION & COMPLETION =================
+        function handleLevelComplete() {
+            AudioSynth.playLevelClear();
+
+            // If it's the last level
+            if (currentLevelIndex === gameData.levels.length - 1) {
+                endGameSession();
+            } else {
+                // Proceed to next level dialog
+                showAlert("success", "🏆 關卡完成！", "做得太棒了！已清除本區域所有登革熱病媒蚊。準備進入下一關大掃除！", () => {
+                    loadLevel(currentLevelIndex + 1);
+                });
+            }
+        }
+
+        function endGameSession() {
+            gameFinished = true;
+            clearInterval(timerInterval);
+            AudioSynth.playTriumph();
+
+            // Final score penalty calculation: Time + (Mistakes * 3 seconds)
+            const finalScore = (elapsedTime + (totalMistakes * 3)).toFixed(2);
+
+            // Construct score item
+            const newRecord = {
+                id: Date.now().toString(),
+                class: playerClass,
+                name: playerName,
+                rawTime: elapsedTime,
+                mistakes: totalMistakes,
+                finalScore: parseFloat(finalScore),
+                date: new Date().toLocaleDateString('zh-TW')
+            };
+
+            // Save record locally as fallback
+            let localRecords = JSON.parse(localStorage.getItem('dengue_scores') || '[]');
+            localRecords.push(newRecord);
+            localStorage.setItem('dengue_scores', JSON.stringify(localRecords));
+
+            // Sync with Google Apps Script Sheets database
+            postScoreToGAS(newRecord);
+
+            // Show congratulatory alert, then redirect to ranking
+            showAlert("success", "🎉 恭喜通關！", `完成挑戰！<br>原始時間：${formatTime(elapsedTime)}<br>失誤：${totalMistakes} 次 (加罰 ${totalMistakes * 3} 秒)<br><span class="text-rose-600 font-extrabold text-lg">總評分成績：${finalScore} 秒</span>`, () => {
+                showLeaderboard();
+            });
+        }
+
+        // ================= LEADERBOARD MECHANICS =================
+        function showLeaderboard() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-scoreboard').classList.remove('hidden');
+            document.getElementById('score-class-title').innerText = playerClass;
+
+            filterRank('current');
+        }
+
+        function filterRank(type) {
+            const btnCurrent = document.getElementById('btn-filter-current');
+            const btnAll = document.getElementById('btn-filter-all');
+            const tbody = document.getElementById('leaderboard-body');
+
+            tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin text-teal-500 mr-2"></i>更新榜單中...</td></tr>`;
+
+            if (type === 'current') {
+                btnCurrent.className = "flex-1 py-2 rounded-xl text-sm font-extrabold bg-white text-teal-800 shadow-sm transition";
+                btnAll.className = "flex-1 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-white/50 transition";
+                
+                fetchScoresFromServer((scores) => {
+                    const filtered = scores.filter(s => s.class === playerClass);
+                    renderScores(filtered);
+                });
+            } else {
+                btnAll.className = "flex-1 py-2 rounded-xl text-sm font-extrabold bg-white text-teal-800 shadow-sm transition";
+                btnCurrent.className = "flex-1 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-white/50 transition";
+                
+                fetchScoresFromServer((scores) => {
+                    renderScores(scores);
+                });
+            }
+        }
+
+        function renderScores(scores) {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+
+            // Sort scores in memory (Shortest final score is #1)
+            const sorted = scores.sort((a, b) => a.finalScore - b.finalScore);
+
+            if (sorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-400 font-bold">目前無競賽紀錄，快來當第一名吧！</td></tr>`;
+                return;
+            }
+
+            sorted.forEach((score, index) => {
+                const isTop3 = index < 3;
+                const medalColors = ["text-amber-400", "text-slate-400", "text-amber-600"];
+                const rankDisplay = isTop3 
+                    ? `<i class="fa-solid fa-medal ${medalColors[index]} text-xl"></i>` 
+                    : index + 1;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-50 hover:bg-slate-50/50 transition duration-150";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-center font-black text-slate-600">${rankDisplay}</td>
+                    <td class="py-3 px-4">
+                        <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded mr-2">${score.class}</span>
+                        <span class="text-slate-800 font-extrabold">${score.name}</span>
+                    </td>
+                    <td class="py-3 px-4 text-center font-bold text-rose-600 font-mono">${score.finalScore.toFixed(2)}s</td>
+                    <td class="py-3 px-4 text-center text-slate-400 text-xs font-bold">+${score.mistakes * 3}秒 (${score.mistakes}次)</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Fetch scores dynamically from GAS or fall back to local storage
+        function fetchScoresFromServer(callback) {
+            if (!gasWebappUrl) {
+                // No server configured: read from LocalStorage
+                const localRecords = JSON.parse(localStorage.getItem('dengue_scores') || '[]');
+                callback(localRecords);
+                return;
+            }
+
+            // Fetch via AJAX API from Google Sheets
+            fetch(`${gasWebappUrl}?action=getScores`)
+                .then(res => res.json())
+                .then(data => {
+                    callback(data);
+                })
+                .catch(err => {
+                    console.error("GAS 雲端資料獲取失敗，改採本地儲存檔案：", err);
+                    const localRecords = JSON.parse(localStorage.getItem('dengue_scores') || '[]');
+                    callback(localRecords);
+                });
+        }
+
+        function postScoreToGAS(scoreItem) {
+            if (!gasWebappUrl) return;
+
+            const postData = {
+                action: "addScore",
+                data: scoreItem
+            };
+
+            // Fire and forget, or handle safely via fallback
+            fetch(gasWebappUrl, {
+                method: "POST",
+                mode: "no-cors", // Required to bypass CORS restriction with standard Apps Script redirect behavior
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(postData)
+            })
+            .then(() => console.log("雲端試算表記錄成功"))
+            .catch(err => console.error("雲端試算表傳輸失敗：", err));
+        }
+
+        // ================= INTERFACE ACTIONS =================
+        function resetToWelcome() {
+            document.getElementById('screen-scoreboard').classList.add('hidden');
+            document.getElementById('screen-welcome').classList.remove('hidden');
+        }
+
+        function shareScore() {
+            const finalScore = (elapsedTime + (totalMistakes * 3)).toFixed(2);
+            const shareText = `🏆 【登革熱獵人】病媒蚊防治清除賽！我代表 ${playerClass} 完成了全關卡挑戰！\n⏱ 累計成績總分：${finalScore} 秒！快來超越我！`;
+            
+            // Clipboard copying handling due to security sandboxes
+            const tempText = document.createElement('textarea');
+            tempText.value = shareText;
+            document.body.appendChild(tempText);
+            tempText.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempText);
+
+            showAlert("success", "複製成功！", "已將成績挑戰誓言複製到你的剪貼簿，趕快貼給其他同學吧！");
+        }
+
+        // ================= CUSTOM DIALOG POPUPS =================
+        let activeAlertCallback = null;
+
+        function showAlert(type, title, text, callback = null) {
+            const alertModal = document.getElementById('custom-alert');
+            const alertIcon = document.getElementById('alert-icon');
+            const alertTitle = document.getElementById('alert-title');
+            const alertText = document.getElementById('alert-text');
+            
+            activeAlertCallback = callback;
+
+            // Apply theme classes based on type
+            if (type === "success") {
+                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-emerald-100 text-emerald-500 animate-bounce";
+                alertIcon.innerHTML = `<i class="fa-solid fa-square-check"></i>`;
+            } else if (type === "warning") {
+                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-amber-100 text-amber-500 animate-pulse";
+                alertIcon.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+            }
+
+            alertTitle.innerHTML = title;
+            alertText.innerHTML = text;
+            
+            alertModal.classList.remove('hidden');
+            alertModal.classList.add('flex');
+        }
+
+        function closeAlert() {
+            const alertModal = document.getElementById('custom-alert');
+            alertModal.classList.add('hidden');
+            alertModal.classList.remove('flex');
+            
+            if (activeAlertCallback) {
+                const cb = activeAlertCallback;
+                activeAlertCallback = null;
+                cb();
+            }
+        }
+
+        // ================= CONFIGURATION & SETTINGS MANAGER =================
+        function toggleSettings() {
+            const modal = document.getElementById('modal-settings');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                loadEditorLevel();
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function saveGasUrl() {
+            const input = document.getElementById('setting-gas-url');
+            gasWebappUrl = input.value.trim();
+            localStorage.setItem('dengue_gas_url', gasWebappUrl);
+            
+            // Instantly try to fetch roster list when URL is updated!
+            fetchRosterFromCloud();
+
+            showAlert("success", "儲存成功", "GAS 雲端資料庫串接網址已保存，網頁已嘗試動態更新班級名冊資料！");
+        }
+
+        // ================= NO-CODE HOTSPOT EDITOR SYSTEM =================
+        let selectedEditorLevel = 0;
+        let editorHotspots = [];
+
+        function loadEditorLevel() {
+            selectedEditorLevel = parseInt(document.getElementById('editor-level-select').value);
+            const level = gameData.levels[selectedEditorLevel];
+            
+            document.getElementById('editor-img-url').value = level.bgImg;
+            
+            // Set background preview src
+            updateEditorBg();
+        }
+
+        function updateEditorBg() {
+            const urlInput = document.getElementById('editor-img-url').value.trim();
+            const preview = document.getElementById('editor-bg-preview');
+            const level = gameData.levels[selectedEditorLevel];
+            
+            level.bgImg = urlInput;
+            preview.src = urlInput;
+
+            preview.onerror = function() {
+                this.src = level.backupBgImg;
+            };
+
+            renderEditorMarkers();
+        }
+
+        function handleEditorMapClick(e) {
+            // Prevent triggering if we are dragging a marker
+            if (isDragging) return;
+
+            const container = document.getElementById('editor-map-container');
+            const rect = container.getBoundingClientRect();
+            
+            // Percentage clicked
+            const x = parseFloat((((e.clientX - rect.left) / rect.width) * 100).toFixed(1));
+            const y = parseFloat((((e.clientY - rect.top) / rect.height) * 100).toFixed(1));
+
+            // Prompt for hotspot name
+            const spotName = prompt("請為此處孳生源命名 (例如：窗台花盆底盤):");
+            if (!spotName) return;
+
+            const spotDesc = prompt("請輸入教學提示說明文：", "此處容易下雨積水，孳生病媒蚊卵，應落實巡倒清刷...");
+            if (!spotDesc) return;
+
+            const level = gameData.levels[selectedEditorLevel];
+            const newId = level.hotspots.length > 0 ? Math.max(...level.hotspots.map(h => h.id)) + 1 : 1;
+
+            // Default generous radius to 8% to make clicking easy
+            level.hotspots.push({
+                id: newId,
+                x: x,
+                y: y,
+                r: 8.0, 
+                name: spotName,
+                desc: spotDesc
+            });
+
+            renderEditorMarkers();
+        }
+
+        // Real-time Global MouseMove & MouseUp Event Handlers for Drag & Drop
+        function handleGlobalMouseMove(e) {
+            if (!isDragging || activeDragSpotId === null) return;
+            
+            const container = document.getElementById('editor-map-container');
+            const rect = container.getBoundingClientRect();
+            
+            // Calculate dynamic coordinate percentages relative to parent container
+            let x = ((e.clientX - rect.left) / rect.width) * 100;
+            let y = ((e.clientY - rect.top) / rect.height) * 100;
+            
+            // Constrain between 0% and 100% inside container boundaries
+            x = Math.max(0, Math.min(100, x));
+            y = Math.max(0, Math.min(100, y));
+            
+            const level = gameData.levels[selectedEditorLevel];
+            const spot = level.hotspots.find(h => h.id === activeDragSpotId);
+            if (spot) {
+                spot.x = parseFloat(x.toFixed(1));
+                spot.y = parseFloat(y.toFixed(1));
+                
+                // Instantly update targeted DOM element positions for butter-smooth rendering
+                const markerEl = document.getElementById(`drag-marker-${spot.id}`);
+                const boundaryEl = document.getElementById(`drag-boundary-${spot.id}`);
+                if (markerEl) {
+                    markerEl.style.left = `${spot.x}%`;
+                    markerEl.style.top = `${spot.y}%`;
+                }
+                if (boundaryEl) {
+                    boundaryEl.style.left = `${spot.x}%`;
+                    boundaryEl.style.top = `${spot.y}%`;
+                }
+                
+                // Instantly update coordinate texts in table view as well
+                const xTextEl = document.getElementById(`coord-x-${spot.id}`);
+                const yTextEl = document.getElementById(`coord-y-${spot.id}`);
+                if (xTextEl) xTextEl.innerText = `${spot.x}%`;
+                if (yTextEl) yTextEl.innerText = `${spot.y}%`;
+            }
+        }
+
+        function handleGlobalMouseUp() {
+            if (isDragging) {
+                isDragging = false;
+                activeDragSpotId = null;
+                // Re-render markers completely to sync the underlying data state cleanly
+                renderEditorMarkers();
+            }
+        }
+
+        // Enable double click inline inputs for high flexibility
+        function enableInlineEdit(id, field) {
+            const element = document.getElementById(`spot-${field}-text-${id}`);
+            if (!element) return;
+            
+            const currentValue = element.innerText;
+            const level = gameData.levels[selectedEditorLevel];
+            const spot = level.hotspots.find(h => h.id === id);
+            if (!spot) return;
+            
+            if (field === 'name') {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = currentValue;
+                input.className = "w-full px-2 py-1 text-xs border border-teal-300 rounded font-extrabold text-teal-800 focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white";
+                
+                const saveHandler = () => {
+                    const newValue = input.value.trim();
+                    if (newValue) {
+                        spot.name = newValue;
+                    }
+                    renderEditorMarkers();
+                };
+                
+                input.onblur = saveHandler;
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') saveHandler();
+                    if (e.key === 'Escape') renderEditorMarkers();
+                };
+                
+                element.innerHTML = '';
+                element.appendChild(input);
+                input.focus();
+                input.select();
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = currentValue;
+                textarea.rows = 2;
+                textarea.className = "w-full px-2 py-1 text-[11px] border border-teal-300 rounded text-slate-600 focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white leading-tight";
+                
+                const saveHandler = () => {
+                    const newValue = textarea.value.trim();
+                    if (newValue) {
+                        spot.desc = newValue;
+                    }
+                    renderEditorMarkers();
+                };
+                
+                textarea.onblur = saveHandler;
+                textarea.onkeydown = (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) saveHandler();
+                    if (e.key === 'Escape') renderEditorMarkers();
+                };
+                
+                element.innerHTML = '';
+                element.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+            }
+        }
+
+        function renderEditorMarkers() {
+            const layer = document.getElementById('editor-markers-layer');
+            const listTbody = document.getElementById('editor-hotspots-list');
+            const level = gameData.levels[selectedEditorLevel];
+            
+            layer.innerHTML = '';
+            listTbody.innerHTML = '';
+
+            level.hotspots.forEach((spot, idx) => {
+                // Center point marker with cursor-move support for easy dragging
+                const marker = document.createElement('div');
+                marker.id = `drag-marker-${spot.id}`;
+                marker.className = "absolute w-8 h-8 bg-teal-500/90 border-2 border-white rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md z-10 animate-splat cursor-move pointer-events-auto select-none";
+                marker.style.left = `${spot.x}%`;
+                marker.style.top = `${spot.y}%`;
+                marker.style.transform = 'translate(-50%, -50%)';
+                marker.innerText = idx + 1;
+                
+                // Stop map-click event propagation & bind mouse down for Dragging
+                marker.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    isDragging = true;
+                    activeDragSpotId = spot.id;
+                });
+
+                // Double Click on Marker directly on image preview map to edit details instantly
+                marker.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    const newName = prompt("修改此處孳生源名稱：", spot.name);
+                    if (newName === null) return;
+                    const newDesc = prompt("修改此處教學提示說明：", spot.desc);
+                    if (newDesc === null) return;
+                    
+                    spot.name = newName.trim() || spot.name;
+                    spot.desc = newDesc.trim() || spot.desc;
+                    renderEditorMarkers();
+                });
+
+                layer.appendChild(marker);
+
+                // Collision Boundary Visualization (Visual Representation of Radius 'r')
+                const boundary = document.createElement('div');
+                boundary.id = `drag-boundary-${spot.id}`;
+                boundary.className = "absolute border-2 border-dashed border-rose-500 bg-rose-500/15 rounded-full pointer-events-none z-0";
+                boundary.style.left = `${spot.x}%`;
+                boundary.style.top = `${spot.y}%`;
+                boundary.style.width = `${spot.r * 2}%`;
+                boundary.style.height = `${spot.r * 2}%`;
+                boundary.style.transform = 'translate(-50%, -50%)';
+                layer.appendChild(boundary);
+
+                // Table row inside settings modal
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td id="coord-x-${spot.id}" class="p-2 font-mono text-slate-500">${spot.x}%</td>
+                    <td id="coord-y-${spot.id}" class="p-2 font-mono text-slate-500">${spot.y}%</td>
+                    <td class="p-2">
+                        <div class="font-extrabold text-teal-800 cursor-pointer select-none hover:text-teal-600 transition" 
+                             id="spot-name-text-${spot.id}" 
+                             title="雙擊文字可線上修改名稱"
+                             ondblclick="enableInlineEdit(${spot.id}, 'name')">
+                            ${spot.name}
+                        </div>
+                        <div class="text-[10px] text-slate-400 font-medium cursor-pointer select-none hover:text-slate-600 transition mt-1 leading-tight" 
+                             id="spot-desc-text-${spot.id}" 
+                             title="雙擊文字可線上修改說明"
+                             ondblclick="enableInlineEdit(${spot.id}, 'desc')">
+                            ${spot.desc}
+                        </div>
+                    </td>
+                    <td class="p-2 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <input type="number" step="0.5" min="2" max="25" value="${spot.r}" 
+                                onchange="updateHotspotRadius(${spot.id}, this.value)" 
+                                class="w-14 px-1 py-1 border border-slate-200 rounded-lg text-center font-bold font-mono text-xs text-rose-600 focus:outline-teal-500">
+                            <span class="text-[10px] text-slate-400 font-bold">%</span>
+                        </div>
+                    </td>
+                    <td class="p-2 text-center">
+                        <button onclick="deleteHotspot(${spot.id})" class="text-rose-500 hover:text-rose-600 px-1 text-sm"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                `;
+                listTbody.appendChild(tr);
+            });
+        }
+
+        // Dynamically update collision radius and instantly visualize it
+        function updateHotspotRadius(id, newRadius) {
+            const level = gameData.levels[selectedEditorLevel];
+            const spot = level.hotspots.find(h => h.id === id);
+            if (spot) {
+                // Ensure radius values fall within reasonable game bounds
+                let rVal = parseFloat(newRadius) || 5;
+                if (rVal < 2) rVal = 2;
+                if (rVal > 25) rVal = 25;
+                
+                spot.r = rVal;
+                renderEditorMarkers();
+            }
+        }
+
+        function deleteHotspot(id) {
+            const level = gameData.levels[selectedEditorLevel];
+            level.hotspots = level.hotspots.filter(h => h.id !== id);
+            renderEditorMarkers();
+        }
+
+        function clearCurrentLevelHotspots() {
+            if (confirm("確認要清空此關卡目前的所有可點擊熱點嗎？")) {
+                gameData.levels[selectedEditorLevel].hotspots = [];
+                renderEditorMarkers();
+            }
+        }
+
+        function saveAllConfigs() {
+            // Save state to local database
+            localStorage.setItem('dengue_game_config', JSON.stringify(gameData));
+            showAlert("success", "保存成功", "所有關卡圖片、熱點坐標與自訂點擊半徑配置已成功套用至遊戲中！");
+            toggleSettings();
+            
+            // If in active gameplay screen, reset level design to adapt immediately
+            if (!document.getElementById('screen-game').classList.contains('hidden')) {
+                loadLevel(currentLevelIndex);
+            }
+        }
+
+        // ================= BACKEND CODE GENERATOR (EXPORTS TO CLIPBOARD) =================
+        function copyGasCode() {
+            const gasCode = `/**
+ * 登革熱病媒蚊防治網頁遊戲 - 雲端試算表後端 GAS 腳本 (升級支援學生名冊自動同步)
+ * * 部署教學：
+ * 1. 在 Google 試算表中，點擊 擴充功能 -> Apps Script
+ * 2. 清空原本內容，貼上此代碼，點擊儲存
+ * 3. 點擊右上角「部署」->「新增部署」
+ * 4. 選取網頁應用程式 (Web App)
+ * 5. 設定「誰有權限存取」為「任何人」
+ * 6. 點擊部署，並複製產生的網頁應用程式 URL
+ */
+
+const SPREADSHEET = SpreadsheetApp.getActiveSpreadsheet();
+
+// 處理 GET 請求：用來讀取最新排行榜與學生名冊
+function doGet(e) {
+  const action = e.parameter.action;
+  
+  if (action === "getScores") {
+    return handleGetScores();
+  }
+  
+  if (action === "getRoster") {
+    return handleGetRoster();
+  }
+  
+  return createJSONOutput({ status: "error", message: "Invalid action" });
+}
+
+// 處理 POST 請求：用來上傳新的學生成績
+function doPost(e) {
+  try {
+    const postData = JSON.parse(e.postData.contents);
+    const action = postData.action;
+    
+    if (action === "addScore") {
+      return handleAddScore(postData.data);
+    }
+    
+    return createJSONOutput({ status: "error", message: "Invalid action" });
+  } catch(err) {
+    return createJSONOutput({ status: "error", message: err.toString() });
+  }
+}
+
+// 讀取學生名冊 (若工作表不存在，則自動初始化示範資料，方便老師直接在上面改！)
+function handleGetRoster() {
+  let sheet = SPREADSHEET.getSheetByName("學生名冊");
+  if (!sheet) {
+    sheet = SPREADSHEET.insertSheet("學生名冊");
+    sheet.appendRow(["班級", "座號", "姓名"]);
+    // 寫入示範資料
+    sheet.appendRow(["701", "1", "陳大同"]);
+    sheet.appendRow(["701", "2", "林小美"]);
+    sheet.appendRow(["702", "1", "王大胖"]);
+    sheet.appendRow(["708", "1", "張君雅"]);
+    sheet.setFrozenRows(1);
+  }
+  
+  const data = sheet.getDataRange().getValues();
+  let roster = { classes: [], students: {} };
+  
+  if (data.length > 1) {
+    for (let i = 1; i < data.length; i++) {
+      let className = data[i][0] ? data[i][0].toString().trim() : "";
+      let seat = data[i][1] ? data[i][1].toString().trim() : "";
+      let name = data[i][2] ? data[i][2].toString().trim() : "";
+      
+      if (!className || !name) continue;
+      
+      if (!roster.classes.includes(className)) {
+        roster.classes.push(className);
+        roster.students[className] = [];
+      }
+      
+      roster.students[className].push({ seat: seat, name: name });
+    }
+  }
+  
+  // 排序班級名稱
+  roster.classes.sort();
+  return createJSONOutput(roster);
+}
+
+// 讀取所有分數
+function handleGetScores() {
+  const sheets = SPREADSHEET.getSheets();
+  let allScores = [];
+  
+  sheets.forEach(sheet => {
+    // 排除名冊工作表，只抓取班級成績單
+    if (sheet.getName() === "學生名冊") return;
+    
+    const data = sheet.getDataRange().getValues();
+    // 略過首行標題欄
+    if (data.length > 1) {
+      for (let i = 1; i < data.length; i++) {
+        allScores.push({
+          id: data[i][0] ? data[i][0].toString() : "",
+          class: data[i][1] ? data[i][1].toString() : "",
+          name: data[i][2] ? data[i][2].toString() : "",
+          rawTime: data[i][3] ? parseFloat(data[i][3]) : 0,
+          mistakes: data[i][4] ? parseInt(data[i][4]) : 0,
+          finalScore: data[i][5] ? parseFloat(data[i][5]) : 0,
+          date: data[i][6] ? Utilities.formatDate(new Date(data[i][6]), "GMT+8", "yyyy-MM-dd") : ""
+        });
+      }
+    }
+  });
+  
+  return createJSONOutput(allScores);
+}
+
+// 新增一筆成績紀錄
+function handleAddScore(score) {
+  const sheetName = score.class; // 每個班級對應一個 Sheet 分頁
+  let sheet = SPREADSHEET.getSheetByName(sheetName);
+  
+  // 如果分頁不存在，自動建立該班級的分頁與首行標題
+  if (!sheet) {
+    sheet = SPREADSHEET.insertSheet(sheetName);
+    sheet.appendRow(["唯一識別碼", "班級", "學生姓名", "遊玩原始秒數", "失誤次數", "最終總秒數(成績)", "記錄日期"]);
+    // 凍結首行
+    sheet.setFrozenRows(1);
+  }
+  
+  // 寫入成績資料
+  sheet.appendRow([
+    score.id,
+    score.class,
+    score.name,
+    score.rawTime,
+    score.mistakes,
+    score.finalScore,
+    new Date()
+  ]);
+  
+  return createJSONOutput({ status: "success", message: "Score saved successfully." });
+}
+
+function createJSONOutput(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+            const tempText = document.createElement('textarea');
+            tempText.value = gasCode;
+            document.body.appendChild(tempText);
+            tempText.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempText);
+
+            showAlert("success", "腳本代碼複製成功！", "你可以直接到 Google 試算表貼上此腳本，並進行網頁部署串接。");
+        }
+    </script>
+</body>
+</html>
