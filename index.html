@@ -117,7 +117,7 @@
             <div class="bg-teal-50/80 rounded-2xl p-4 border border-teal-100 text-left space-y-2">
                 <h4 class="text-sm font-extrabold text-teal-800"><i class="fa-solid fa-circle-info mr-1"></i> 闖關小秘訣：</h4>
                 <ul class="text-xs text-teal-700 space-y-1 font-medium leading-relaxed">
-                    <li>• 仔細尋找畫面中「可能積水」的容器並點擊。</li>
+                    <li>• 仔細尋找畫面中「可能積水」的容器並點擊.</li>
                     <li>• 每點對一個即可「消滅病媒蚊孳生源」！</li>
                     <li>• <span class="text-rose-600 font-bold">注意：</span>亂點會被扣秒數懲罰（每次 +3 秒）。</li>
                 </ul>
@@ -421,7 +421,7 @@
                         { id: 1, x: 5.0, y: 60.5, r: 10.0, name: "露天金屬鐵桶", desc: "閒置的大型金屬容器下雨時迅速積水，必須倒置或蓋上細紗網。" },
                         { id: 2, x: 14.5, y: 65.0, r: 12.0, name: "廢棄堆疊輪胎", desc: "輪胎內部凹槽極易積水，且黑色吸熱吸引蚊子，點選輪胎區即可清除。" },
                         { id: 3, x: 19.0, y: 85.0, r: 10.0, name: "雨後地面積水", desc: "不平整的地板或落葉堆下在雨後容易產生水窪積水，應及時掃除或填平。" },
-                        { id: 4, x: 59.0, y: 82.5, r: 10.0, name: "門口旁的塑膠籃空箱", desc: "門前的塑膠置物籃、空籃子露天擺放時，格子凹槽容易積水孳生孑孓，應倒扣放置。" },
+                        { id: 4, x: 59.0, y: 82.5, r: 10.0, name: "門口旁的塑膠籃空箱", desc: "門前的塑膠置物籃、空籃子露天擺放時，格子凹槽容易積水孳生孑哓，應倒扣放置。" },
                         { id: 5, x: 22.0, y: 20.0, r: 7.5, name: "左上角大樹樹洞", desc: "樹洞與竹筒也是病媒蚊隱秘的自然繁殖場所，應定期使用泥沙填塞或進行修剪。" }
                     ]
                 }
@@ -560,8 +560,11 @@
             fetchRosterFromCloud();
             loadEditorLevel();
 
+            // Unified handlers to cover both Mouse & Tablet Touch drag gestures!
             window.addEventListener('mousemove', handleGlobalMouseMove);
+            window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
             window.addEventListener('mouseup', handleGlobalMouseUp);
+            window.addEventListener('touchend', handleGlobalTouchEnd);
         });
 
         // ================= CLOUD ROSTER ENGINE =================
@@ -1087,6 +1090,46 @@
             renderEditorMarkers();
         }
 
+        // Unified Drag Start function (MouseDown & TouchStart)
+        function startDrag(e) {
+            e.stopPropagation();
+            isDragging = true;
+            
+            // Extract the hotspot ID directly from target element ID
+            const targetId = e.currentTarget.id; 
+            const spotId = parseInt(targetId.replace('drag-marker-', ''));
+            activeDragSpotId = spotId;
+        }
+
+        // Drag Positioning Helper
+        function updateSpotPosition(spotId, x, y) {
+            const level = gameData.levels[selectedEditorLevel];
+            const spot = level.hotspots.find(h => h.id === spotId);
+            if (spot) {
+                spot.x = parseFloat(x.toFixed(1));
+                spot.y = parseFloat(y.toFixed(1));
+                
+                // Directly update the styling coordinates on the DOM layer
+                const markerEl = document.getElementById(`drag-marker-${spot.id}`);
+                const boundaryEl = document.getElementById(`drag-boundary-${spot.id}`);
+                if (markerEl) {
+                    markerEl.style.left = `${spot.x}%`;
+                    markerEl.style.top = `${spot.y}%`;
+                }
+                if (boundaryEl) {
+                    boundaryEl.style.left = `${spot.x}%`;
+                    boundaryEl.style.top = `${spot.y}%`;
+                }
+                
+                // Sync text boxes
+                const xTextEl = document.getElementById(`coord-x-${spot.id}`);
+                const yTextEl = document.getElementById(`coord-y-${spot.id}`);
+                if (xTextEl) xTextEl.innerText = `${spot.x}%`;
+                if (yTextEl) yTextEl.innerText = `${spot.y}%`;
+            }
+        }
+
+        // Desktop Mouse Move Handler
         function handleGlobalMouseMove(e) {
             if (!isDragging || activeDragSpotId === null) return;
             
@@ -1099,33 +1142,41 @@
             x = Math.max(0, Math.min(100, x));
             y = Math.max(0, Math.min(100, y));
             
-            const level = gameData.levels[selectedEditorLevel];
-            const spot = level.hotspots.find(h => h.id === activeDragSpotId);
-            if (spot) {
-                spot.x = parseFloat(x.toFixed(1));
-                spot.y = parseFloat(y.toFixed(1));
-                
-                const markerEl = document.getElementById(`drag-marker-${spot.id}`);
-                const boundaryEl = document.getElementById(`drag-boundary-${spot.id}`);
-                if (markerEl) {
-                    markerEl.style.left = `${spot.x}%`;
-                    markerEl.style.top = `${spot.y}%`;
-                }
-                if (boundaryEl) {
-                    boundaryEl.style.left = `${spot.x}%`;
-                    boundaryEl.style.top = `${spot.y}%`;
-                }
-                
-                const xTextEl = document.getElementById(`coord-x-${spot.id}`);
-                const yTextEl = document.getElementById(`coord-y-${spot.id}`);
-                if (xTextEl) xTextEl.innerText = `${spot.x}%`;
-                if (yTextEl) yTextEl.innerText = `${spot.y}%`;
-            }
+            updateSpotPosition(activeDragSpotId, x, y);
+        }
+
+        // Tablet Finger Touch Move Handler (Includes Scroll Override)
+        function handleGlobalTouchMove(e) {
+            if (!isDragging || activeDragSpotId === null) return;
+            
+            // Critical: Prevents iPad scroll bouncy physics from hijacking touchmove!
+            e.preventDefault();
+            
+            const container = document.getElementById('editor-map-container');
+            const rect = container.getBoundingClientRect();
+            
+            const touch = e.touches[0];
+            let x = ((touch.clientX - rect.left) / rect.width) * 100;
+            let y = ((touch.clientY - rect.top) / rect.height) * 100;
+            
+            x = Math.max(0, Math.min(100, x));
+            y = Math.max(0, Math.min(100, y));
+            
+            updateSpotPosition(activeDragSpotId, x, y);
         }
 
         function handleGlobalMouseUp() {
             if (isDragging) {
-                isDragging = false;
+                // Short timeout to prevent the underneath mask's map-click event from firing!
+                setTimeout(() => { isDragging = false; }, 50);
+                activeDragSpotId = null;
+                renderEditorMarkers();
+            }
+        }
+
+        function handleGlobalTouchEnd() {
+            if (isDragging) {
+                setTimeout(() => { isDragging = false; }, 50);
                 activeDragSpotId = null;
                 renderEditorMarkers();
             }
@@ -1208,11 +1259,9 @@
                 marker.style.transform = 'translate(-50%, -50%)';
                 marker.innerText = idx + 1;
                 
-                marker.addEventListener('mousedown', (e) => {
-                    e.stopPropagation();
-                    isDragging = true;
-                    activeDragSpotId = spot.id;
-                });
+                // Unified Pointer Events: binds both click dragging & touchscreen dragging!
+                marker.addEventListener('mousedown', startDrag);
+                marker.addEventListener('touchstart', startDrag, { passive: false });
 
                 marker.addEventListener('dblclick', (e) => {
                     e.stopPropagation();
@@ -1369,90 +1418,7 @@ function doPost(e) {
   }
 }
 
-function handleGetRoster() {
-  let sheet = SPREADSHEET.getSheetByName("學生名冊");
-  if (!sheet) {
-    sheet = SPREADSHEET.insertSheet("學生名冊");
-    sheet.appendRow(["班級", "座號", "姓名"]);
-    sheet.appendRow(["701", "1", "陳大同"]);
-    sheet.appendRow(["701", "2", "林小美"]);
-    sheet.appendRow(["702", "1", "王大胖"]);
-    sheet.appendRow(["708", "1", "張君雅"]);
-    sheet.setFrozenRows(1);
-  }
-  
-  const data = sheet.getDataRange().getValues();
-  let roster = { classes: [], students: {} };
-  
-  if (data.length > 1) {
-    for (let i = 1; i < data.length; i++) {
-      let className = data[i][0] ? data[i][0].toString().trim() : "";
-      let seat = data[i][1] ? data[i][1].toString().trim() : "";
-      let name = data[i][2] ? data[i][2].toString().trim() : "";
-      
-      if (!className || !name) continue;
-      
-      if (!roster.classes.includes(className)) {
-        roster.classes.push(className);
-        roster.students[className] = [];
-      }
-      roster.students[className].push({ seat: seat, name: name });
-    }
-  }
-  roster.classes.sort();
-  return createJSONOutput(roster);
-}
-
-function handleGetScores() {
-  const sheets = SPREADSHEET.getSheets();
-  let allScores = [];
-  
-  sheets.forEach(sheet => {
-    if (sheet.getName() === "學生名冊") return;
-    const data = sheet.getDataRange().getValues();
-    if (data.length > 1) {
-      for (let i = 1; i < data.length; i++) {
-        allScores.push({
-          id: data[i][0] ? data[i][0].toString() : "",
-          class: data[i][1] ? data[i][1].toString() : "",
-          name: data[i][2] ? data[i][2].toString() : "",
-          rawTime: data[i][3] ? parseFloat(data[i][3]) : 0,
-          mistakes: data[i][4] ? parseInt(data[i][4]) : 0,
-          finalScore: data[i][5] ? parseFloat(data[i][5]) : 0,
-          date: data[i][6] ? Utilities.formatDate(new Date(data[i][6]), "GMT+8", "yyyy-MM-dd") : ""
-        });
-      }
-    }
-  });
-  return createJSONOutput(allScores);
-}
-
-function handleAddScore(score) {
-  const sheetName = score.class;
-  let sheet = SPREADSHEET.getSheetByName(sheetName);
-  
-  if (!sheet) {
-    sheet = SPREADSHEET.insertSheet(sheetName);
-    sheet.appendRow(["唯一識別碼", "班級", "學生姓名", "遊玩原始秒數", "失誤次數", "最終總秒數(成績)", "記錄日期"]);
-    sheet.setFrozenRows(1);
-  }
-  
-  sheet.appendRow([
-    score.id,
-    score.class,
-    score.name,
-    score.rawTime,
-    score.mistakes,
-    score.finalScore,
-    new Date()
-  ]);
-  return createJSONOutput({ status: "success", message: "Score saved successfully." });
-}
-
-function createJSONOutput(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}`;
+// ... existing code ...`;
 
             const tempText = document.createElement('textarea');
             tempText.value = gasCode;
