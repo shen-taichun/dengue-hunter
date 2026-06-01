@@ -1,44 +1,258 @@
-/**
- * 處理熱點點擊後的邏輯
- * 區分：[衛教] 標籤為輔助知識，其餘為必須清除的孳生源
- */
-function handleSuccessfulHit(spot, x, y) {
-    // 判斷是否為衛教熱點（名稱開頭是否有 [衛教]）
-    const isEducational = spot.name.startsWith("[衛教]");
-
-    if (!isEducational) {
-        // --- 處理過關熱點 (孳生源) ---
-        // 避免重複計算
-        if (!foundHotspots.includes(spot.id)) {
-            foundHotspots.push(spot.id);
-            AudioSynth.playHit();
-            
-            // 更新進度條與計數
-            const level = gameData.levels[currentLevelIndex];
-            const totalCleanable = level.hotspots.filter(h => !h.name.startsWith("[衛教]")).length;
-            const currentFound = foundHotspots.length;
-            
-            document.getElementById('hud-found-count').innerText = currentFound;
-            document.getElementById('hud-progress-bar').style.width = `${(currentFound / totalCleanable) * 100}%`;
-            
-            // 標記已點擊位置
-            createSuccessMarker(x, y, spot.name);
-
-            // 檢查是否過關
-            if (currentFound >= totalCleanable) {
-                setTimeout(() => { handleLevelComplete(); }, 800);
-            }
-        }
-    } else {
-        // --- 處理衛教熱點 (教育用途) ---
-        AudioSynth.playHit(); // 給予點擊音效回饋
-        // 衛教熱點不執行 foundHotspots.push，因此不會影響進度條
-    }
-
-    // 統一顯示提示視窗 (無論哪種熱點都會彈出)
-    const title = isEducational ? "💡 衛教小貼士" : "✨ 發現孳生源！";
-    const cleanName = spot.name.replace("[衛教]", "");
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登革熱獵人 - 孳生源清除大作戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
     
-    // 假設您原本有 showAlert 函式，若沒有，請確保視窗顯示邏輯正確
-    showAlert("success", title, `<strong>【${cleanName}】</strong><br><span class="text-slate-600 font-medium text-xs leading-relaxed mt-2 block">${spot.desc}</span>`);
-}
+    <style>
+        body {
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Custom animations */
+        @keyframes splat {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-splat {
+            animation: splat 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes floatText {
+            0% { transform: translateY(0px); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+        }
+        .animate-floatText {
+            animation: floatText 1.2s ease-out forwards;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 via-teal-100 to-cyan-100 min-height-screen text-slate-800 overflow-x-hidden antialiased">
+
+    <header class="w-full py-4 px-6 flex justify-between items-center bg-white/60 backdrop-blur-md border-b border-teal-100/50 sticky top-0 z-40 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center text-white text-xl shadow-md shadow-teal-200">
+                <i class="fa-solid fa-mosquito"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-teal-800 tracking-wide">登革熱獵人</h1>
+                <p class="text-xs text-teal-600 font-bold">孳生源清除大作戰</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <div id="roster-status" class="hidden text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full font-bold flex items-center gap-1">
+                <i class="fa-solid fa-cloud-check animate-pulse"></i>
+                <span>雲端名冊已載入</span>
+            </div>
+            <button onclick="toggleSettings()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition duration-200" title="教師設定">
+                <i class="fa-solid fa-gear text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6 min-h-[calc(100vh-80px)] flex flex-col justify-center items-center">
+        
+        <section id="screen-welcome" class="w-full max-w-lg glass rounded-3xl border border-white/60 p-8 shadow-xl text-center space-y-6 transition-all duration-300">
+            <div class="space-y-2">
+                <div class="inline-block px-4 py-1.5 bg-rose-100 text-rose-700 text-sm font-extrabold rounded-full mb-2">
+                    ⚡ 跨裝置即時競技模式
+                </div>
+                <h2 class="text-3xl font-extrabold text-slate-800">打倒病媒蚊！</h2>
+                <p class="text-slate-500">在限定時間內，找出所有潛藏的病媒蚊孳生容器。</p>
+            </div>
+
+            <div id="connection-warning" class="hidden w-full bg-amber-50 border border-amber-200 p-3.5 rounded-2xl text-left text-xs text-amber-800 font-bold flex items-start gap-2.5 animate-pulse">
+                <i class="fa-solid fa-circle-exclamation text-amber-500 text-lg mt-0.5"></i>
+                <div>
+                    <span class="block text-slate-800 font-black mb-0.5">⚠️ 雲端名冊載入逾時或發生錯誤</span>
+                    <span>系統已自動為您切換至「本機手動輸入模式」！您可以正常打字輸入姓名，通關成績仍會安全儲存在本機上。</span>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-sm font-extrabold text-slate-600 mb-2">
+                        <i class="fa-solid fa-school text-teal-500 mr-1.5"></i> 選擇你的班級
+                    </label>
+                    <div class="relative">
+                        <select id="input-class" onchange="handleClassChange()" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 appearance-none font-bold text-slate-700">
+                            <option value="701">701 班</option>
+                            <option value="702">702 班</option>
+                            <option value="703">703 班</option>
+                            <option value="704">704 班</option>
+                            <option value="705">705 班</option>
+                            <option value="教師測試">教師/訪客 測試</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-teal-500">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-extrabold text-slate-600 mb-2">
+                        <i class="fa-solid fa-user text-teal-500 mr-1.5"></i> 選擇或輸入你的姓名
+                    </label>
+                    <div id="student-name-input-container">
+                        <input type="text" id="input-name" placeholder="例如：林小明" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 font-bold text-slate-700 placeholder-slate-400">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-teal-50/80 rounded-2xl p-4 border border-teal-100 text-left space-y-2">
+                <h4 class="text-sm font-extrabold text-teal-800"><i class="fa-solid fa-circle-info mr-1"></i> 闖關小秘訣：</h4>
+                <ul class="text-xs text-teal-700 space-y-1 font-medium leading-relaxed">
+                    <li>• 仔細尋找畫面中「可能積水」的容器並點擊.</li>
+                    <li>• 每點對一個即可「消滅病媒蚊孳生源」！</li>
+                    <li>• <span class="text-rose-600 font-bold">注意：</span>亂點會被扣秒數懲罰（每次 +3 秒）。</li>
+                </ul>
+            </div>
+
+            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold text-lg rounded-2xl shadow-lg shadow-teal-200 hover:shadow-xl hover:shadow-teal-300 transform active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+                <span>進入遊戲</span>
+                <i class="fa-solid fa-circle-play"></i>
+            </button>
+        </section>
+
+
+        <section id="screen-game" class="w-full hidden flex-col items-center gap-4 transition-all duration-300">
+            <div class="w-full max-w-4xl flex flex-wrap justify-between items-center bg-white/80 backdrop-blur-md border border-teal-100 rounded-2xl p-4 gap-4 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div class="px-3.5 py-1.5 bg-teal-100 text-teal-800 text-sm font-black rounded-lg">
+                        關卡 <span id="hud-level-num">1</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-400">目前挑戰者</div>
+                        <div class="text-sm font-black text-slate-700" id="hud-player-info">班級 - 姓名</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-400">已清除孳生源</div>
+                        <div class="text-sm font-black text-slate-700"><span id="hud-found-count">0</span> / <span id="hud-total-count">0</span></div>
+                    </div>
+                    <div class="w-24 h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                        <div id="hud-progress-bar" class="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-400">累計時間</div>
+                        <div class="text-xl font-black text-rose-600 font-mono" id="hud-timer">00:00.00</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-400">誤點失誤</div>
+                        <div class="text-sm font-black text-amber-600" id="hud-mistakes">0 次</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full max-w-4xl relative bg-slate-900 rounded-3xl overflow-hidden shadow-2xl aspect-[1.6] border-4 border-white" id="game-board-container">
+                <div class="absolute inset-0 flex flex-col justify-center items-center text-slate-500 p-8 text-center bg-slate-800 z-0">
+                    <i class="fa-solid fa-spinner animate-spin text-4xl mb-4 text-teal-400"></i>
+                    <p class="text-sm font-bold">載入關卡場景中...</p>
+                </div>
+
+                <img id="game-bg-image" src="" alt="關卡場景" class="absolute inset-0 w-full h-full object-cover select-none pointer-events-none z-10 opacity-0 transition-opacity duration-300" onload="this.style.opacity='1'">
+
+                <div id="game-click-layer" class="absolute inset-0 z-20 cursor-crosshair" onclick="handleBoardClick(event)"></div>
+
+                <div id="found-markers-layer" class="absolute inset-0 z-25 pointer-events-none"></div>
+
+                <div id="feedback-layer" class="absolute inset-0 z-30 pointer-events-none overflow-hidden"></div>
+            </div>
+
+            <div class="text-slate-500 text-sm font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-hand-pointer animate-bounce"></i>
+                <span>請仔細觀察圖片，點擊可能積水的任何容器、凹陷、底盤。</span>
+            </div>
+        </section>
+
+
+        <section id="screen-scoreboard" class="w-full max-w-2xl hidden glass rounded-3xl border border-white/60 p-8 shadow-xl space-y-6 transition-all duration-300 text-center">
+            <div class="space-y-2">
+                <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto shadow-md">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-3xl font-extrabold text-slate-800">
+                    <span id="score-class-title">---</span> 班級排行榜
+                </h2>
+                <p class="text-slate-500">清除速度越快、失誤越少，名次越前面！</p>
+            </div>
+
+            <div class="flex justify-center gap-2 bg-slate-100 p-1.5 rounded-2xl">
+                <button onclick="filterRank('current')" id="btn-filter-current" class="flex-1 py-2 rounded-xl text-sm font-extrabold bg-white text-teal-800 shadow-sm transition">
+                    本班級排名
+                </button>
+                <button onclick="filterRank('all')" id="btn-filter-all" class="flex-1 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-white/50 transition">
+                    全校總榜
+                </button>
+            </div>
+
+            <div class="overflow-hidden border border-slate-100 rounded-2xl bg-white shadow-inner max-h-[300px] overflow-y-auto">
+                <table class="w-full border-collapse text-left">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-400 text-xs font-extrabold uppercase tracking-wider border-b border-slate-100">
+                            <th class="py-3 px-4 text-center">名次</th>
+                            <th class="py-3 px-4">挑戰者</th>
+                            <th class="py-3 px-4 text-center">累計成績</th>
+                            <th class="py-3 px-4 text-center">失誤罰時</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body" class="text-slate-700 text-sm font-bold">
+                        <tr>
+                            <td colspan="4" class="py-8 text-center text-slate-400">載入排行榜中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="resetToWelcome()" class="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-2xl transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-rotate-left"></i>
+                    <span>返回首頁</span>
+                </button>
+                <button onclick="shareScore()" class="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>分享成績</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="modal-settings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl">
+                <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-teal-500"></i>
+                    <span>教師後台 & 熱點編輯器</span>
+                </h3>
+                <button onclick="toggleSettings()" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <div class="space-y-3">
+                    <h4 class="text-sm font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>1. 雲端試算表 (GAS) 串接與名冊設定</span>
+                    </h4>
+                    <p class="text-xs text-slate-500">串接後網頁會自動抓取名冊，並動態產生班級、姓名下拉選單。</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="setting
