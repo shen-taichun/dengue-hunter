@@ -394,14 +394,27 @@
     </div>
 
 
+    <!-- ========================================================================= -->
+    <!--                                                                           -->
+    <!-- ⬇️⬇️⬇️⬇️⬇️⬇️   【重要】 老師請注意：以下是您的設定區   ⬇️⬇️⬇️⬇️⬇️⬇️             -->
+    <!--                                                                           -->
+    <!-- ========================================================================= -->
     <script>
-        // ================= PRESET BACKEND SETTINGS =================
-        // 🚨 老師請在此貼上您的 GAS 網頁應用程式網址！
-        // 預先埋入後，任何學生設備掃描開啟均會自動同步名冊，無須再次手動輸入！
-        const DEFAULT_GAS_URL = ""; 
-        const TEACHER_PASSWORD = "888"; // 預設進後台密碼，防護學生誤闖，可任意修改
+        // -------------------------------------------------------------------------
+        // 🚨 【設定步驟 1】 請在下面的雙引號 "" 貼上您的 Google Apps Script 網址
+        // -------------------------------------------------------------------------
+        const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbyr6TqsX8Uv7F7zsAi5Wi777ThTki_uLAskCpGQzEsfvCEaC1fE5vkstMllDgbQo5JjHA/exec"; 
 
-        // ================= GAME DATABASE & STATE =================
+        // -------------------------------------------------------------------------
+        // 🚨 【設定步驟 2】 教師進入後台的密碼（預設為 888），防止學生亂進
+        // -------------------------------------------------------------------------
+        const TEACHER_PASSWORD = "6888"; 
+
+
+        // =========================================================================
+        //                 以下為遊戲主程式與資料庫，請勿隨意修改
+        // =========================================================================
+
         let gameData = {
             levels: [
                 {
@@ -987,6 +1000,7 @@
         // ================= CUSTOM DIALOG POPUPS =================
         let activeAlertCallback = null;
 
+        // Custom alert logic
         function showAlert(type, title, text, callback = null) {
             const alertModal = document.getElementById('custom-alert');
             const alertIcon = document.getElementById('alert-icon');
@@ -1518,17 +1532,7 @@ function handleAddScore(score) {
 function createJSONOutput(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
-}`;
-
-            const tempText = document.createElement('textarea');
-            tempText.value = gasCode;
-            document.body.appendChild(tempText);
-            tempText.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempText);
-
-            showAlert("success", "腳本代碼複製成功！", "你可以直接到 Google 試算表貼上此腳本，並進行網頁部署串接。");
-        }
+}
     </script>
 </body>
 </html>
