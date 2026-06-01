@@ -367,7 +367,7 @@
                 <div class="border-t border-slate-100 pt-6 space-y-3">
                     <h4 class="text-sm font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fa-solid fa-file-export"></i>
-                        <span>3. 進階：匯出與匯入關卡配置座標</span>
+                        <span>3. 進階：匯出與慢速匯入關卡配置座標</span>
                     </h4>
                     <p class="text-xs text-slate-500">為了避免更換裝置或重新整理網頁時設定跑掉，您可以使用以下功能將熱點座標匯出成備份文字，直接貼給 AI，我幫您「寫死」在程式中！</p>
                     <div class="flex gap-2">
@@ -871,6 +871,7 @@
             }, 1500);
         }
 
+        // Create success indicator
         function createSuccessMarker(x, y, name) {
             const layer = document.getElementById('found-markers-layer');
             const marker = document.createElement('div');
@@ -1599,7 +1600,17 @@ function handleAddScore(score) {
 function createJSONOutput(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
-}
+}`;
+
+            const tempText = document.createElement('textarea');
+            tempText.value = gasCode;
+            document.body.appendChild(tempText);
+            tempText.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempText);
+
+            showAlert("success", "腳本代碼複製成功！", "你可以直接到 Google 試算表貼上此腳本，並進行網頁部署串接。");
+        }
     </script>
 </body>
 </html>
