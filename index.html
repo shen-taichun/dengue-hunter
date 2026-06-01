@@ -80,6 +80,15 @@
                 <p class="text-slate-500">在限定時間內，找出所有潛藏的病媒蚊孳生容器。</p>
             </div>
 
+            <!-- 自動診斷安全降級提示欄 (預設隱藏，僅在雲端連線失敗或慢時顯示) -->
+            <div id="connection-warning" class="hidden w-full bg-amber-50 border border-amber-200 p-3.5 rounded-2xl text-left text-xs text-amber-800 font-bold flex items-start gap-2.5 animate-pulse">
+                <i class="fa-solid fa-circle-exclamation text-amber-500 text-lg mt-0.5"></i>
+                <div>
+                    <span class="block text-slate-800 font-black mb-0.5">⚠️ 雲端名冊載入逾時或發生錯誤</span>
+                    <span>系統已自動為您切換至「本機手動輸入模式」！您可以正常打字輸入姓名，通關成績仍會安全儲存在本機上。</span>
+                </div>
+            </div>
+
             <!-- Login Form -->
             <div class="space-y-4 text-left">
                 <!-- Class Selection -->
@@ -401,14 +410,16 @@
     <!-- ========================================================================= -->
     <script>
         // -------------------------------------------------------------------------
-        // 🚨 【設定步驟 1】 請在下面的雙引號 "" 貼上您的 Google Apps Script 網址
+        // 🚨 【設定步驟 1】 請在下面的雙引號 "" 內，精準貼上您的 GAS 網址。
+        //     💡 範例：const DEFAULT_GAS_URL = "https://script.google.com/macros/s/XXXXX/exec";
+        //     ⚠️ 注意：兩端必須有半形英文雙引號 "" 包住，引號內不要有任何空格或多餘換行。
         // -------------------------------------------------------------------------
         const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbyr6TqsX8Uv7F7zsAi5Wi777ThTki_uLAskCpGQzEsfvCEaC1fE5vkstMllDgbQo5JjHA/exec"; 
 
         // -------------------------------------------------------------------------
-        // 🚨 【設定步驟 2】 教師進入後台的密碼（預設為 888），防止學生亂進
+        // 🚨 【設定步驟 2】 進入後台密碼（預設為 888）。點選齒輪圖示時會要求輸入。
         // -------------------------------------------------------------------------
-        const TEACHER_PASSWORD = "6888"; 
+        const TEACHER_PASSWORD = "888"; 
 
 
         // =========================================================================
@@ -473,247 +484,290 @@
             ctx: null,
             init() {
                 if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    try {
+                        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    } catch(e) {
+                        console.warn("瀏覽器不支援 Web Audio API");
+                    }
+                }
+            },
+            playSound(notes, duration, type="sine") {
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const ctx = this.ctx;
+                    const now = ctx.currentTime;
+                    
+                    notes.forEach((note, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        
+                        osc.type = type;
+                        osc.frequency.setValueAtTime(note.f, now + (idx * note.t));
+                        
+                        if (note.ramp) {
+                            osc.frequency.exponentialRampToValueAtTime(note.ramp, now + (idx * note.t) + note.d);
+                        }
+                        
+                        gain.gain.setValueAtTime(note.v || 0.15, now + (idx * note.t));
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + (idx * note.t) + note.d);
+                        
+                        osc.start(now + (idx * note.t));
+                        osc.stop(now + (idx * note.t) + note.d);
+                    });
+                } catch(e) {
+                    console.warn("播放音效時發生錯誤：", e);
                 }
             },
             playHit() {
-                this.init();
-                const ctx = this.ctx;
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
-                
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-                
-                osc.start(now);
-                osc.stop(now + 0.16);
+                this.playSound([{ f: 150, ramp: 800, d: 0.15, t: 0, v: 0.3 }], 0.16);
             },
             playMiss() {
-                this.init();
-                const ctx = this.ctx;
-                const now = ctx.currentTime;
-                [0, 0.08].forEach(delay => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    
-                    osc.type = "sawtooth";
-                    osc.frequency.setValueAtTime(120, now + delay);
-                    osc.frequency.linearRampToValueAtTime(80, now + delay + 0.07);
-                    
-                    gain.gain.setValueAtTime(0.2, now + delay);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.07);
-                    
-                    osc.start(now + delay);
-                    osc.stop(now + delay + 0.08);
-                });
+                this.playSound([
+                    { f: 120, d: 0.07, t: 0, v: 0.2 },
+                    { f: 80, d: 0.07, t: 0.08, v: 0.2 }
+                ], 0.15, "sawtooth");
             },
             playLevelClear() {
-                this.init();
-                const ctx = this.ctx;
-                const now = ctx.currentTime;
-                const notes = [261.63, 329.63, 392.00, 523.25];
-                notes.forEach((freq, idx) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    
-                    osc.type = "triangle";
-                    osc.frequency.setValueAtTime(freq, now + (idx * 0.1));
-                    gain.gain.setValueAtTime(0.15, now + (idx * 0.1));
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.1) + 0.3);
-                    
-                    osc.start(now + (idx * 0.1));
-                    osc.stop(now + (idx * 0.1) + 0.3);
-                });
+                this.playSound([
+                    { f: 261.63, d: 0.3, t: 0.1 },
+                    { f: 329.63, d: 0.3, t: 0.2 },
+                    { f: 392.00, d: 0.3, t: 0.3 },
+                    { f: 523.25, d: 0.3, t: 0.4 }
+                ], 0.5, "triangle");
             },
             playTriumph() {
-                this.init();
-                const ctx = this.ctx;
-                const now = ctx.currentTime;
-                const fanfare = [
-                    { f: 392.00, d: 0.1 },
-                    { f: 523.25, d: 0.1 },
-                    { f: 659.25, d: 0.1 },
-                    { f: 783.99, d: 0.3 },
-                    { f: 659.25, d: 0.1 },
-                    { f: 783.99, d: 0.6 }
-                ];
-                let currentOffset = 0;
-                fanfare.forEach(note => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    
-                    osc.type = "sine";
-                    osc.frequency.setValueAtTime(note.f, now + currentOffset);
-                    gain.gain.setValueAtTime(0.2, now + currentOffset);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + currentOffset + note.d);
-                    
-                    osc.start(now + currentOffset);
-                    osc.stop(now + currentOffset + note.d);
-                    currentOffset += note.d + 0.02;
-                });
+                this.playSound([
+                    { f: 392.00, d: 0.1, t: 0.12 },
+                    { f: 523.25, d: 0.1, t: 0.24 },
+                    { f: 659.25, d: 0.1, t: 0.36 },
+                    { f: 783.99, d: 0.3, t: 0.48 },
+                    { f: 659.25, d: 0.1, t: 0.8 },
+                    { f: 783.99, d: 0.6, t: 0.95 }
+                ], 1.5);
             }
         };
 
         // ================= LIFECYCLE & INITIALIZATION =================
         window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('dengue_gas_url')) {
-                gasWebappUrl = localStorage.getItem('dengue_gas_url');
-            } else {
-                gasWebappUrl = DEFAULT_GAS_URL;
-            }
-            document.getElementById('setting-gas-url').value = gasWebappUrl;
-            
-            if (localStorage.getItem('dengue_game_config')) {
-                gameData = JSON.parse(localStorage.getItem('dengue_game_config'));
-            }
-            
-            fetchRosterFromCloud();
-            loadEditorLevel();
+            try {
+                // 【超神分享功能】優先從網址參數中讀取 ?gas= 網址 (方便直接分享給其他老師，不需改任何代碼！)
+                const urlParams = new URLSearchParams(window.location.search);
+                const queryGas = urlParams.get('gas');
+                
+                if (queryGas) {
+                    gasWebappUrl = decodeURIComponent(queryGas).trim();
+                    localStorage.setItem('dengue_gas_url', gasWebappUrl); 
+                } else if (localStorage.getItem('dengue_gas_url')) {
+                    gasWebappUrl = localStorage.getItem('dengue_gas_url').trim();
+                } else {
+                    gasWebappUrl = DEFAULT_GAS_URL.trim();
+                }
+                document.getElementById('setting-gas-url').value = gasWebappUrl;
+                
+                if (localStorage.getItem('dengue_game_config')) {
+                    gameData = JSON.parse(localStorage.getItem('dengue_game_config'));
+                }
+                
+                // 🚀 【自我防護安全機制】
+                // 設定一個 3 秒的計時器。如果 3 秒內 GAS 完全沒有回應，自動視為斷線，啟用本機備用方案，並顯示防呆警告。
+                let rosterTimeout = setTimeout(() => {
+                    if (!cloudRosterData && gasWebappUrl) {
+                        console.warn("雲端名冊載入逾時，啟動安全防呆降級模式（本機離線手動輸入）。");
+                        document.getElementById('connection-warning')?.classList.remove('hidden');
+                        handleClassChange(); // 確保學生有名稱輸入框可以打字
+                    }
+                }, 3000);
 
-            // Unified handlers to cover both Mouse & Tablet Touch drag gestures!
-            window.addEventListener('mousemove', handleGlobalMouseMove);
-            window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
-            window.addEventListener('mouseup', handleGlobalMouseUp);
-            window.addEventListener('touchend', handleGlobalTouchEnd);
+                fetchRosterFromCloud(rosterTimeout);
+                loadEditorLevel();
+
+                // 綁定鍵盤與拖曳事件
+                window.addEventListener('mousemove', handleGlobalMouseMove);
+                window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+                window.addEventListener('mouseup', handleGlobalMouseUp);
+                window.addEventListener('touchend', handleGlobalTouchEnd);
+
+            } catch (e) {
+                console.error("系統初使化時發生重大錯誤：", e);
+                // 即使完全出錯，也要確保基本輸入框是正常的，不讓網頁全白或全卡死
+                document.getElementById('connection-warning')?.classList.remove('hidden');
+                handleClassChange();
+            }
         });
 
         // ================= CLOUD ROSTER ENGINE =================
-        function fetchRosterFromCloud() {
-            if (!gasWebappUrl) return;
+        function fetchRosterFromCloud(timeoutTimer) {
+            if (!gasWebappUrl) {
+                // 如果一開始就沒填 GAS 網址，直接啟動手動輸入模式
+                if (timeoutTimer) clearTimeout(timeoutTimer);
+                handleClassChange();
+                return;
+            }
 
-            fetch(`${gasWebappUrl}?action=getRoster`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.classes && data.classes.length > 0) {
-                        cloudRosterData = data;
-                        document.getElementById('roster-status').classList.remove('hidden');
-                        document.getElementById('roster-status').classList.add('flex');
-                        populateClassesDropdown(data.classes);
-                    }
-                })
-                .catch(err => {
-                    console.warn("無法取得雲端名冊：", err);
-                });
+            // fetch 本身放在 try-catch 中防止格式不良的網址直接破壞整個執行緒
+            try {
+                fetch(`${gasWebappUrl}?action=getRoster`)
+                    .then(res => {
+                        if (!res.ok) throw new Error("HTTP 狀態碼錯誤");
+                        return res.json();
+                    })
+                    .then(data => {
+                        // 成功接收到名冊，清除防呆逾時器
+                        if (timeoutTimer) clearTimeout(timeoutTimer);
+
+                        if (data && data.classes && data.classes.length > 0) {
+                            cloudRosterData = data;
+                            document.getElementById('roster-status').classList.remove('hidden');
+                            document.getElementById('roster-status').classList.add('flex');
+                            populateClassesDropdown(data.classes);
+                        } else {
+                            // 雖然連線成功但無名冊資料，安全降級
+                            handleClassChange();
+                        }
+                    })
+                    .catch(err => {
+                        if (timeoutTimer) clearTimeout(timeoutTimer);
+                        console.warn("無法取得雲端名冊（可能遭遇跨網域阻擋 CORS 或試算表權限未開），切換為離線模式：", err);
+                        document.getElementById('connection-warning')?.classList.remove('hidden');
+                        handleClassChange();
+                    });
+            } catch(e) {
+                if (timeoutTimer) clearTimeout(timeoutTimer);
+                console.error("Fetch 發生阻斷型錯誤：", e);
+                document.getElementById('connection-warning')?.classList.remove('hidden');
+                handleClassChange();
+            }
         }
 
         function populateClassesDropdown(classes) {
-            const classSelect = document.getElementById('input-class');
-            classSelect.innerHTML = '';
+            try {
+                const classSelect = document.getElementById('input-class');
+                classSelect.innerHTML = '';
 
-            classes.forEach(cls => {
-                const opt = document.createElement('option');
-                opt.value = cls;
-                opt.innerText = `${cls} 班`;
-                classSelect.appendChild(opt);
-            });
+                classes.forEach(cls => {
+                    const opt = document.createElement('option');
+                    opt.value = cls;
+                    opt.innerText = `${cls} 班`;
+                    classSelect.appendChild(opt);
+                });
 
-            const testOpt = document.createElement('option');
-            testOpt.value = "教師測試";
-            testOpt.innerText = "教師/訪客 測試";
-            classSelect.appendChild(testOpt);
+                const testOpt = document.createElement('option');
+                testOpt.value = "教師測試";
+                testOpt.innerText = "教師/訪客 測試";
+                classSelect.appendChild(testOpt);
 
-            handleClassChange();
+                handleClassChange();
+            } catch(e) {
+                console.error("填入班級選單時出錯：", e);
+            }
         }
 
         // Handle class dropdown select change
         function handleClassChange() {
-            const classSelect = document.getElementById('input-class');
-            const selectedClass = classSelect.value;
-            const container = document.getElementById('student-name-input-container');
+            try {
+                const classSelect = document.getElementById('input-class');
+                const selectedClass = classSelect ? classSelect.value : "701";
+                const container = document.getElementById('student-name-input-container');
+                if (!container) return;
 
-            if (cloudRosterData && cloudRosterData.students && cloudRosterData.students[selectedClass]) {
-                const students = cloudRosterData.students[selectedClass];
-                students.sort((a, b) => parseInt(a.seat || 0) - parseInt(b.seat || 0));
+                if (cloudRosterData && cloudRosterData.students && cloudRosterData.students[selectedClass]) {
+                    const students = cloudRosterData.students[selectedClass];
+                    students.sort((a, b) => parseInt(a.seat || 0) - parseInt(b.seat || 0));
 
-                let dropdownHtml = `
-                    <div class="relative">
-                        <select id="input-name" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 appearance-none font-bold text-slate-700">
-                `;
+                    let dropdownHtml = `
+                        <div class="relative">
+                            <select id="input-name" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 appearance-none font-bold text-slate-700">
+                    `;
 
-                students.forEach(student => {
-                    const label = student.seat ? `${student.seat}號 - ${student.name}` : student.name;
-                    dropdownHtml += `<option value="${student.name}">${label}</option>`;
-                });
+                    students.forEach(student => {
+                        const label = student.seat ? `${student.seat}號 - ${student.name}` : student.name;
+                        dropdownHtml += `<option value="${student.name}">${label}</option>`;
+                    });
 
-                dropdownHtml += `
-                        </select>
-                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-teal-500">
-                            <i class="fa-solid fa-chevron-down"></i>
+                    dropdownHtml += `
+                            </select>
+                            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-teal-500">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
 
-                container.innerHTML = dropdownHtml;
-            } else {
-                container.innerHTML = `
-                    <input type="text" id="input-name" placeholder="例如：林小明" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 font-bold text-slate-700 placeholder-slate-400">
-                `;
+                    container.innerHTML = dropdownHtml;
+                } else {
+                    // 安全降級：回歸預設文字輸入框，保證隨時可玩！
+                    container.innerHTML = `
+                        <input type="text" id="input-name" placeholder="例如：林小明" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 font-bold text-slate-700 placeholder-slate-400">
+                    `;
+                }
+            } catch(e) {
+                console.error("更新姓名輸入區時發生例外：", e);
             }
         }
 
         // ================= FLOW CONTROL =================
         function startGame() {
-            const classInput = document.getElementById('input-class');
-            const nameInput = document.getElementById('input-name');
-            
-            playerClass = classInput.value;
-            playerName = nameInput.value ? nameInput.value.trim() : "";
+            try {
+                const classInput = document.getElementById('input-class');
+                const nameInput = document.getElementById('input-name');
+                
+                playerClass = classInput ? classInput.value : "701";
+                playerName = nameInput ? nameInput.value.trim() : "";
 
-            if (!playerName) {
-                showAlert("warning", "哎呀！", "請選擇或輸入您的姓名才能開始競賽。");
-                return;
+                if (!playerName) {
+                    showAlert("warning", "哎呀！", "請選擇或輸入您的姓名才能開始競賽。");
+                    return;
+                }
+
+                currentLevelIndex = 0;
+                totalMistakes = 0;
+                gameFinished = false;
+                elapsedTime = 0;
+
+                const hudPlayer = document.getElementById('hud-player-info');
+                if (hudPlayer) hudPlayer.innerText = `${playerClass} - ${playerName}`;
+                
+                const hudMistakes = document.getElementById('hud-mistakes');
+                if (hudMistakes) hudMistakes.innerText = `${totalMistakes} 次`;
+
+                document.getElementById('screen-welcome').classList.add('hidden');
+                document.getElementById('screen-game').classList.remove('hidden');
+
+                loadLevel(0);
+                
+                startTime = performance.now();
+                startTimer();
+            } catch(e) {
+                console.error("進入遊戲時發生錯誤：", e);
             }
-
-            currentLevelIndex = 0;
-            totalMistakes = 0;
-            gameFinished = false;
-            elapsedTime = 0;
-
-            document.getElementById('hud-player-info').innerText = `${playerClass} - ${playerName}`;
-            document.getElementById('hud-mistakes').innerText = `${totalMistakes} 次`;
-
-            document.getElementById('screen-welcome').classList.add('hidden');
-            document.getElementById('screen-game').classList.remove('hidden');
-
-            loadLevel(0);
-            
-            startTime = performance.now();
-            startTimer();
         }
 
         function loadLevel(index) {
-            currentLevelIndex = index;
-            const level = gameData.levels[index];
-            foundHotspots = [];
+            try {
+                currentLevelIndex = index;
+                const level = gameData.levels[index];
+                foundHotspots = [];
 
-            document.getElementById('hud-level-num').innerText = level.levelNum;
-            document.getElementById('hud-found-count').innerText = "0";
-            document.getElementById('hud-total-count').innerText = level.hotspots.length;
-            document.getElementById('hud-progress-bar').style.width = "0%";
+                document.getElementById('hud-level-num').innerText = level.levelNum;
+                document.getElementById('hud-found-count').innerText = "0";
+                document.getElementById('hud-total-count').innerText = level.hotspots.length;
+                document.getElementById('hud-progress-bar').style.width = "0%";
 
-            document.getElementById('found-markers-layer').innerHTML = '';
-            document.getElementById('feedback-layer').innerHTML = '';
+                document.getElementById('found-markers-layer').innerHTML = '';
+                document.getElementById('feedback-layer').innerHTML = '';
 
-            const bgImgElement = document.getElementById('game-bg-image');
-            bgImgElement.src = level.bgImg;
-            
-            bgImgElement.onerror = function() {
-                console.warn(`本地圖片 ${level.bgImg} 載入失敗，嘗試線上備用...`);
-                this.src = level.backupBgImg;
-            };
+                const bgImgElement = document.getElementById('game-bg-image');
+                bgImgElement.src = level.bgImg;
+                
+                bgImgElement.onerror = function() {
+                    console.warn(`本地圖片 ${level.bgImg} 載入失敗，嘗試線上備用...`);
+                    this.src = level.backupBgImg;
+                };
+            } catch(e) {
+                console.error("載入關卡時出錯：", e);
+            }
         }
 
         // ================= TIMER ENGINE =================
@@ -945,16 +999,25 @@
                 return;
             }
 
-            fetch(`${gasWebappUrl}?action=getScores`)
-                .then(res => res.json())
-                .then(data => {
-                    callback(data);
-                })
-                .catch(err => {
-                    console.error("GAS 雲端資料獲取失敗：", err);
-                    const localRecords = JSON.parse(localStorage.getItem('dengue_scores') || '[]');
-                    callback(localRecords);
-                });
+            try {
+                fetch(`${gasWebappUrl}?action=getScores`)
+                    .then(res => {
+                        if (!res.ok) throw new Error("HTTP 狀態碼錯誤");
+                        return res.json();
+                    })
+                    .then(data => {
+                        callback(data);
+                    })
+                    .catch(err => {
+                        console.error("GAS 雲端資料獲取失敗，改讀本地存檔：", err);
+                        const localRecords = JSON.parse(localStorage.getItem('dengue_scores') || '[]');
+                        callback(localRecords);
+                    });
+            } catch (e) {
+                console.error("獲取雲端分數時發生阻斷型例外，改讀本地：", e);
+                const localRecords = JSON.parse(localStorage.getItem('dengue_scores') || '[]');
+                callback(localRecords);
+            }
         }
 
         function postScoreToGAS(scoreItem) {
@@ -965,16 +1028,20 @@
                 data: scoreItem
             };
 
-            fetch(gasWebappUrl, {
-                method: "POST",
-                mode: "no-cors",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(postData)
-            })
-            .then(() => console.log("雲端試算表記錄成功"))
-            .catch(err => console.error("雲端試算表傳輸失敗：", err));
+            try {
+                fetch(gasWebappUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(postData)
+                })
+                .then(() => console.log("雲端試算表記錄成功"))
+                .catch(err => console.error("雲端試算表傳輸失敗：", err));
+            } catch(e) {
+                console.error("Post 成績時發生阻斷型錯誤：", e);
+            }
         }
 
         // ================= INTERFACE ACTIONS =================
