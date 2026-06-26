@@ -14,12 +14,32 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Fredoka', 'Noto Sans TC', sans-serif; user-select: none; -webkit-user-select: none; }
-        @keyframes splat { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-        .animate-splat { animation: splat 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes floatText { 0% { transform: translateY(0px); opacity: 1; } 100% { transform: translateY(-40px); opacity: 0; } }
-        .animate-floatText { animation: floatText 1.2s ease-out forwards; }
-        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        body {
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Custom animations */
+        @keyframes splat {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-splat {
+            animation: splat 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes floatText {
+            0% { transform: translateY(0px); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+        }
+        .animate-floatText {
+            animation: floatText 1.2s ease-out forwards;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-emerald-50 via-teal-100 to-cyan-100 min-height-screen text-slate-800 overflow-x-hidden antialiased">
@@ -36,248 +56,1373 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
+            <!-- Roster Status Indicator -->
             <div id="roster-status" class="hidden text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full font-bold flex items-center gap-1">
-                <i class="fa-solid fa-cloud-check animate-pulse"></i> <span>雲端名冊已載入</span>
+                <i class="fa-solid fa-cloud-check animate-pulse"></i>
+                <span>雲端名冊已載入</span>
             </div>
-            <button onclick="toggleSettings()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition duration-200">
+            <button onclick="toggleSettings()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition duration-200" title="教師設定">
                 <i class="fa-solid fa-gear text-lg"></i>
             </button>
         </div>
     </header>
 
+    <!-- MAIN APP CONTAINER -->
     <main class="max-w-6xl mx-auto px-4 py-6 min-h-[calc(100vh-80px)] flex flex-col justify-center items-center">
-        <!-- WELCOME SCREEN -->
-        <section id="screen-welcome" class="w-full max-w-lg glass rounded-3xl border border-white/60 p-8 shadow-xl text-center space-y-6">
+        
+        <!-- ================= WELCOME / LOGIN SCREEN ================= -->
+        <section id="screen-welcome" class="w-full max-w-lg glass rounded-3xl border border-white/60 p-8 shadow-xl text-center space-y-6 transition-all duration-300">
             <div class="space-y-2">
-                <div class="inline-block px-4 py-1.5 bg-rose-100 text-rose-700 text-sm font-extrabold rounded-full mb-2">⚡ 跨裝置即時競技模式</div>
+                <div class="inline-block px-4 py-1.5 bg-rose-100 text-rose-700 text-sm font-extrabold rounded-full mb-2">
+                    ⚡ 跨裝置即時智慧教學模式
+                </div>
                 <h2 class="text-3xl font-extrabold text-slate-800">打倒病媒蚊！</h2>
                 <p class="text-slate-500">在限定時間內，找出所有潛藏的病媒蚊孳生容器。</p>
             </div>
-            <div id="connection-warning" class="hidden w-full bg-amber-50 border border-amber-200 p-3.5 rounded-2xl text-left text-xs text-amber-800 font-bold flex items-start gap-2.5">
+
+            <!-- 自動診斷安全降級提示欄 -->
+            <div id="connection-warning" class="hidden w-full bg-amber-50 border border-amber-200 p-3.5 rounded-2xl text-left text-xs text-amber-800 font-bold flex items-start gap-2.5 animate-pulse">
                 <i class="fa-solid fa-circle-exclamation text-amber-500 text-lg mt-0.5"></i>
-                <div><span class="block text-slate-800 font-black mb-0.5">⚠️ 雲端名冊載入錯誤</span><span>系統切換至「本機手動輸入模式」。</span></div>
-            </div>
-            <div class="space-y-4 text-left">
                 <div>
-                    <label class="block text-sm font-extrabold text-slate-600 mb-2"><i class="fa-solid fa-school text-teal-500 mr-1.5"></i> 選擇你的班級</label>
-                    <select id="input-class" onchange="handleClassChange()" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 outline-none transition font-bold text-slate-700 appearance-none">
-                        <option value="701">701 班</option><option value="702">702 班</option><option value="703">703 班</option><option value="教師測試">教師/訪客 測試</option>
-                    </select>
+                    <span class="block text-slate-800 font-black mb-0.5">⚠️ 雲端名冊載入逾時或發生錯誤</span>
+                    <span>系統已自動為您切換至「本機手動輸入模式」！您可以正常打字輸入姓名，通關成績仍會安全儲存在本機上。</span>
                 </div>
+            </div>
+
+            <!-- Login Form -->
+            <div class="space-y-4 text-left">
+                <!-- Class Selection -->
                 <div>
-                    <label class="block text-sm font-extrabold text-slate-600 mb-2"><i class="fa-solid fa-user text-teal-500 mr-1.5"></i> 選擇或輸入你的姓名</label>
+                    <label class="block text-sm font-extrabold text-slate-600 mb-2">
+                        <i class="fa-solid fa-school text-teal-500 mr-1.5"></i> 選擇你的班級
+                    </label>
+                    <div class="relative">
+                        <select id="input-class" onchange="handleClassChange()" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 appearance-none font-bold text-slate-700">
+                            <option value="701">701 班</option>
+                            <option value="702">702 班</option>
+                            <option value="703">703 班</option>
+                            <option value="704">704 班</option>
+                            <option value="705">705 班</option>
+                            <option value="教師測試">教師/訪客 測試</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-teal-500">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Name Selection / Input (Adaptive container) -->
+                <div>
+                    <label class="block text-sm font-extrabold text-slate-600 mb-2">
+                        <i class="fa-solid fa-user text-teal-500 mr-1.5"></i> 選擇或輸入你的姓名
+                    </label>
                     <div id="student-name-input-container">
-                        <input type="text" id="input-name" placeholder="例如：林小明" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 outline-none transition font-bold text-slate-700">
+                        <input type="text" id="input-name" placeholder="例如：林小明" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 font-bold text-slate-700 placeholder-slate-400">
                     </div>
                 </div>
             </div>
-            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold text-lg rounded-2xl shadow-lg transition active:scale-95">進入遊戲</button>
+
+            <!-- Quick Guide -->
+            <div class="bg-teal-50/80 rounded-2xl p-4 border border-teal-100 text-left space-y-2">
+                <h4 class="text-sm font-extrabold text-teal-800"><i class="fa-solid fa-circle-info mr-1"></i> 闖關小秘訣：</h4>
+                <ul class="text-xs text-teal-700 space-y-1 font-medium leading-relaxed">
+                    <li>• 仔細尋找畫面中「可能積水」的容器並點擊。</li>
+                    <li>• 每點對一個即可「消滅病媒蚊孳生源」！</li>
+                    <li>• <span class="text-rose-600 font-bold">💡 閱讀彩蛋：</span>點擊到衛教點時，<b>計時器會自動暫停</b>，不佔用你的過關時間，請放心閱讀！</li>
+                    <li>• <span class="text-rose-600 font-bold">注意：</span>亂點會被扣秒數懲罰（每次 +3 秒）。</li>
+                </ul>
+            </div>
+
+            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold text-lg rounded-2xl shadow-lg shadow-teal-200 hover:shadow-xl hover:shadow-teal-300 transform active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+                <span>進入遊戲</span>
+                <i class="fa-solid fa-circle-play"></i>
+            </button>
         </section>
 
-        <!-- GAME SCREEN -->
-        <section id="screen-game" class="w-full hidden flex-col items-center gap-4">
+
+        <!-- ================= GAMEPLAY SCREEN ================= -->
+        <section id="screen-game" class="w-full hidden flex-col items-center gap-4 transition-all duration-300">
+            <!-- HUD (Status Bar) -->
             <div class="w-full max-w-4xl flex flex-wrap justify-between items-center bg-white/80 backdrop-blur-md border border-teal-100 rounded-2xl p-4 gap-4 shadow-sm">
-                <div>
-                    <div class="px-3.5 py-1.5 bg-teal-100 text-teal-800 text-sm font-black rounded-lg">關卡 <span id="hud-level-num">1</span></div>
+                <!-- Info Left -->
+                <div class="flex items-center gap-4">
+                    <div class="px-3.5 py-1.5 bg-teal-100 text-teal-800 text-sm font-black rounded-lg">
+                        關卡 <span id="hud-level-num">1</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-400">目前挑戰者</div>
+                        <div class="text-sm font-black text-slate-700" id="hud-player-info">班級 - 姓名</div>
+                    </div>
                 </div>
+
+                <!-- Found Progress -->
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-400">已清除孳生源</div>
+                        <div class="text-sm font-black text-slate-700"><span id="hud-found-count">0</span> / <span id="hud-total-count">0</span></div>
+                    </div>
+                    <!-- Progress Bar container -->
+                    <div class="w-24 h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                        <div id="hud-progress-bar" class="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Timer & Score -->
                 <div class="flex items-center gap-4">
                     <div class="text-right">
-                        <div class="text-xs font-bold text-slate-400">已清除孳生源 <span id="timer-status-indicator" class="text-[10px] bg-amber-500 text-white px-1 py-0.5 rounded hidden">已暫停</span></div>
+                        <div class="text-xs font-bold text-slate-400">累計時間 <span id="timer-status-indicator" class="text-[10px] bg-amber-500 text-white px-1 py-0.5 rounded hidden">已暫停</span></div>
                         <div class="text-xl font-black text-rose-600 font-mono" id="hud-timer">00:00.00</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-slate-400">誤點失誤</div>
+                        <div class="text-sm font-black text-amber-600" id="hud-mistakes">0 次</div>
                     </div>
                 </div>
             </div>
+
+            <!-- THE GAME BOARD CONTAINER -->
             <div class="w-full max-w-4xl relative bg-slate-900 rounded-3xl overflow-hidden shadow-2xl aspect-[1.6] border-4 border-white" id="game-board-container">
-                <img id="game-bg-image" src="" class="absolute inset-0 w-full h-full object-cover z-10 opacity-0 transition-opacity duration-300">
+                <!-- Fallback Background -->
+                <div class="absolute inset-0 flex flex-col justify-center items-center text-slate-500 p-8 text-center bg-slate-800 z-0">
+                    <i class="fa-solid fa-spinner animate-spin text-4xl mb-4 text-teal-400"></i>
+                    <p class="text-sm font-bold">載入關卡場景中...</p>
+                </div>
+
+                <!-- Level Background Image -->
+                <img id="game-bg-image" src="" alt="關卡場景" class="absolute inset-0 w-full h-full object-cover select-none pointer-events-none z-10 opacity-0 transition-opacity duration-300" onload="this.style.opacity='1'">
+
+                <!-- Interaction / Click Mask -->
                 <div id="game-click-layer" class="absolute inset-0 z-20 cursor-crosshair" onclick="handleBoardClick(event)"></div>
+
+                <!-- Found Hotspots Render Layer (Adds checked badges / marks) -->
                 <div id="found-markers-layer" class="absolute inset-0 z-30 pointer-events-none"></div>
+
+                <!-- Feedback Text overlay (like +3s, etc.) -->
                 <div id="feedback-layer" class="absolute inset-0 z-40 pointer-events-none overflow-hidden"></div>
             </div>
+
+            <!-- Bottom Instruction Tip -->
+            <div class="text-slate-500 text-sm font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-hand-pointer animate-bounce"></i>
+                <span>請仔細觀察圖片，點擊可能積水的任何容器、凹陷、底盤。</span>
+            </div>
         </section>
 
-        <!-- SCORE SCREEN -->
-        <section id="screen-scoreboard" class="w-full max-w-2xl hidden glass rounded-3xl p-8 shadow-xl text-center space-y-6">
-            <h2 class="text-3xl font-extrabold text-slate-800"><span id="score-class-title">---</span> 班級排行榜</h2>
-            <div id="leaderboard-body" class="bg-white p-4 rounded-2xl border border-slate-100"></div>
-            <button onclick="resetToWelcome()" class="w-full py-4 bg-slate-100 hover:bg-slate-200 font-extrabold rounded-2xl">返回首頁</button>
+
+        <!-- ================= RANKING / LEADERBOARD SCREEN ================= -->
+        <section id="screen-scoreboard" class="w-full max-w-2xl hidden glass rounded-3xl border border-white/60 p-8 shadow-xl space-y-6 transition-all duration-300 text-center">
+            <div class="space-y-2">
+                <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto shadow-md">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-3xl font-extrabold text-slate-800">
+                    <span id="score-class-title">---</span> 班級排行榜
+                </h2>
+                <p class="text-slate-500">清除速度越快、失誤越少，名次越前面！</p>
+            </div>
+
+            <!-- Tabs/Filter -->
+            <div class="flex justify-center gap-2 bg-slate-100 p-1.5 rounded-2xl">
+                <button onclick="filterRank('current')" id="btn-filter-current" class="flex-1 py-2 rounded-xl text-sm font-extrabold bg-white text-teal-800 shadow-sm transition">
+                    本班級排名
+                </button>
+                <button onclick="filterRank('all')" id="btn-filter-all" class="flex-1 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-white/50 transition">
+                    全校總榜
+                </button>
+            </div>
+
+            <!-- Scoreboard Table -->
+            <div class="overflow-hidden border border-slate-100 rounded-2xl bg-white shadow-inner max-h-[300px] overflow-y-auto">
+                <table class="w-full border-collapse text-left">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-400 text-xs font-extrabold uppercase tracking-wider border-b border-slate-100">
+                            <th class="py-3 px-4 text-center">名次</th>
+                            <th class="py-3 px-4">挑戰者</th>
+                            <th class="py-3 px-4 text-center">累計成績</th>
+                            <th class="py-3 px-4 text-center">失誤罰時</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body" class="text-slate-700 text-sm font-bold">
+                        <tr>
+                            <td colspan="4" class="py-8 text-center text-slate-400">載入排行榜中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex gap-4">
+                <button onclick="resetToWelcome()" class="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-2xl transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-rotate-left"></i>
+                    <span>返回首頁</span>
+                </button>
+                <button onclick="shareScore()" class="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>分享成績</span>
+                </button>
+            </div>
         </section>
+
     </main>
 
-    <!-- SETTINGS MODAL -->
+    <!-- ================= TEACHER SETTINGS MODAL ================= -->
     <div id="modal-settings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <h3 class="text-xl font-black mb-4">教師後台</h3>
-            <button onclick="resetToDefaultConfigs()" class="bg-rose-100 text-rose-600 px-4 py-2 rounded-xl font-bold mb-4">清除記憶並還原最新預設</button>
-            <div id="editor-map-container" class="relative bg-slate-100 rounded-2xl aspect-[1.6] border-2 border-dashed border-slate-300 overflow-hidden cursor-crosshair" onclick="handleEditorMapClick(event)">
-                <img id="editor-bg-preview" class="absolute inset-0 w-full h-full object-cover">
-                <div id="editor-markers-layer" class="absolute inset-0 z-10"></div>
+        <div class="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl">
+                <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-teal-500"></i>
+                    <span>教師後台 & 熱點編輯器</span>
+                </h3>
+                <button onclick="toggleSettings()" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <div class="mt-4"><button onclick="saveAllConfigs()" class="w-full py-4 bg-teal-500 text-white font-bold rounded-2xl">保存設定</button></div>
-        </div>
-    </div>
 
-    <!-- O/X QUIZ MODAL -->
-    <div id="custom-alert" class="fixed inset-0 z-50 hidden flex justify-center items-center p-4 bg-slate-950/40 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl text-center space-y-4 border border-slate-100 animate-splat">
-            <div id="alert-icon" class="w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-indigo-100 text-indigo-500"><i class="fa-solid fa-clipboard-question"></i></div>
-            <h3 class="text-xl font-extrabold text-slate-800" id="alert-title">標題</h3>
-            <p class="text-sm font-bold text-slate-600 p-4 rounded-xl bg-slate-50" id="alert-text">內文</p>
-            <div id="quiz-container" class="hidden flex-col gap-3">
-                <div class="text-sm font-black text-rose-600">🎯 防疫隨堂考 (答對減3秒，答錯加罰10秒)：</div>
-                <div class="flex gap-3">
-                    <button onclick="handleQuizAnswer(true)" class="flex-1 py-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-extrabold rounded-xl border border-emerald-300 transition">對 (O)</button>
-                    <button onclick="handleQuizAnswer(false)" class="flex-1 py-3 bg-rose-100 hover:bg-rose-200 text-rose-700 font-extrabold rounded-xl border border-rose-300 transition">錯 (X)</button>
+            <!-- Body -->
+            <div class="p-6 space-y-6">
+                <!-- Gas Configuration -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>1. 雲端試算表 (GAS) 串接與名冊設定</span>
+                    </h4>
+                    <p class="text-xs text-slate-500">串接後網頁會自動抓取名冊，並動態產生班級、姓名下拉選單。下方的腳本已經為您升級了自動名冊抓取功能！</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="setting-gas-url" placeholder="請輸入部署後的 GAS Web App URL" class="flex-1 px-4 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-100 outline-none transition font-medium">
+                        <button onclick="saveGasUrl()" class="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white text-sm font-bold rounded-xl transition">
+                            儲存網址
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Copy Instructions -->
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-black text-slate-600">升級版 GAS 後端試算表腳本 (Copy & Paste)</span>
+                        <button onclick="copyGasCode()" class="text-xs text-teal-600 hover:text-teal-700 font-extrabold flex items-center gap-1">
+                            <i class="fa-solid fa-copy"></i> 複製程式碼
+                        </button>
+                    </div>
+                    <div class="text-xs text-slate-400 leading-relaxed font-medium">
+                        <strong>快速名冊設置指南：</strong><br>
+                        1. 複製並部署下方的 GAS 程式碼。<br>
+                        2. 部署成功後，首次開啟網頁，腳本會自動在您的試算表中建立名為 <b>【學生名冊】</b> 的分頁。<br>
+                        3. 請在 <b>【學生名冊】</b> 工作表中，輸入您的班級、座號、姓名。網頁端隨後便會即時更新！
+                    </div>
+                </div>
+
+                <!-- Image and Hotspot Customization Editor -->
+                <div class="space-y-4 border-t border-slate-100 pt-6">
+                    <h4 class="text-sm font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        <span>2. 關卡自訂圖片與熱點設定 (編輯模式)</span>
+                    </h4>
+                    <p class="text-xs text-slate-500">
+                        💡 <b>進階技巧：</b>如果您在名稱開頭加上 <b>[衛教]</b> (例如：「[衛教]冷水壺」)，該熱點被點擊時會彈出知識視窗，但<b>不列入必須過關的清除進度中</b>喔！適合用來增加探索趣味！
+                    </p>
+
+                    <!-- Selector -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">編輯關卡</label>
+                            <select id="editor-level-select" onchange="loadEditorLevel()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl font-bold">
+                                <option value="0">第一關（室內廚房）</option>
+                                <option value="1">第二關（室外庭院）</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">自訂背景圖 (填入網址或使用本地圖)</label>
+                            <input type="text" id="editor-img-url" placeholder="輸入圖片 URL (或將檔案命名為 indoor.png/outdoor.png 放在同目錄)" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none" onchange="updateEditorBg()">
+                        </div>
+                    </div>
+
+                    <!-- Sandbox Interactive Clicker Map -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-black text-slate-600">熱點設定面板 (點擊空白處可新增熱點，<b>「雙擊標記」</b>可快速更名，<b>「拖曳標記」</b>可任意移動)</span>
+                            <button onclick="clearCurrentLevelHotspots()" class="text-xs text-rose-500 hover:text-rose-600 font-bold">
+                                <i class="fa-solid fa-trash-can"></i> 清空本關熱點
+                            </button>
+                        </div>
+                        
+                        <div class="relative bg-slate-100 rounded-2xl overflow-hidden border-2 border-dashed border-slate-300 aspect-[1.6]" id="editor-map-container">
+                            <img id="editor-bg-preview" src="" class="absolute inset-0 w-full h-full object-cover z-10" alt="編輯預覽">
+                            <div class="absolute inset-0 z-20" onclick="handleEditorMapClick(event)"></div>
+                            <div id="editor-markers-layer" class="absolute inset-0 z-25 pointer-events-none"></div>
+                        </div>
+                    </div>
+
+                    <!-- Hotspots Table List -->
+                    <div class="max-h-[180px] overflow-y-auto border border-slate-100 rounded-xl">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 font-bold sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-2">X (%)</th>
+                                    <th class="p-2">Y (%)</th>
+                                    <th class="p-2">容器名稱 / 說明 (雙擊文字可編輯)</th>
+                                    <th class="p-2 text-center">判定半徑 r (%)</th>
+                                    <th class="p-2 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="editor-hotspots-list" class="font-medium text-slate-600">
+                                <!-- Dynamic lines -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Advanced Configuration Export/Import -->
+                <div class="border-t border-slate-100 pt-6 space-y-3">
+                    <h4 class="text-sm font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>3. 進階：匯出與匯入關卡配置座標</span>
+                    </h4>
+                    <p class="text-xs text-slate-500">為了避免更換裝置或重新整理網頁時設定跑掉，您可以使用以下功能將熱點座標匯出成備份文字，直接貼給 AI，我幫您「寫死」在程式中！</p>
+                    <div class="flex gap-2">
+                        <button onclick="exportGameData()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-file-arrow-up"></i> 📤 匯出設定 (複製到剪貼簿)
+                        </button>
+                        <button onclick="importGameData()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-file-arrow-down"></i> 📥 匯入設定 (文字貼入)
+                        </button>
+                    </div>
                 </div>
             </div>
-            <button onclick="closeAlert()" id="alert-btn" class="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-sm rounded-xl transition">確定</button>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-between gap-2 bg-slate-50 rounded-b-3xl">
+                <button onclick="resetToDefaultConfigs()" class="px-4 py-2.5 bg-rose-100 text-rose-600 hover:bg-rose-200 hover:text-rose-700 font-bold text-xs rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> 清除記憶並還原最新預設
+                </button>
+                <button onclick="saveAllConfigs()" class="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-extrabold text-sm rounded-xl shadow-md transition transform active:scale-95">
+                    保存設定並套用遊戲
+                </button>
+            </div>
         </div>
     </div>
 
+    <!-- ================= CUSTOM DIALOG MODAL (UPGRADED FOR INTERACTIVE QUIZ) ================= -->
+    <div id="custom-alert" class="fixed inset-0 z-50 hidden flex justify-center items-center p-4 bg-slate-950/40 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl text-center space-y-4 border border-slate-100 animate-splat">
+            <div id="alert-icon" class="w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm"></div>
+            <h3 class="text-xl font-extrabold text-slate-800" id="alert-title">標題</h3>
+            
+            <div id="alert-content-container" class="space-y-4 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100 max-h-[350px] overflow-y-auto">
+                <p class="text-sm font-medium text-slate-600 leading-relaxed" id="alert-text">內文</p>
+                
+                <!-- O/X Quiz Container -->
+                <div id="quiz-block" class="hidden border-t border-slate-200 pt-3 space-y-2 mt-2">
+                    <div class="text-xs font-black text-rose-600 uppercase tracking-wide flex items-center gap-1">
+                        <i class="fa-solid fa-shield-virus animate-pulse"></i> 防疫大挑戰 (O / X)
+                    </div>
+                    <p id="quiz-question-text" class="text-sm font-black text-slate-800 leading-relaxed"></p>
+                </div>
+            </div>
+
+            <!-- Standard close button -->
+            <button onclick="closeAlert()" id="alert-btn" class="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-sm rounded-xl transition">
+                確定
+            </button>
+
+            <!-- Quiz interactive choice buttons (hidden by default) -->
+            <div id="alert-quiz-buttons" class="hidden flex gap-4 w-full">
+                <button onclick="submitQuizAnswer(true)" class="flex-1 py-3.5 bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-circle-notch text-lg"></i>
+                    <span>正確 (O)</span>
+                </button>
+                <button onclick="submitQuizAnswer(false)" class="flex-1 py-3.5 bg-gradient-to-r from-rose-400 to-red-500 hover:from-rose-500 hover:to-red-600 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                    <span>錯誤 (X)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!--                                                                           -->
+    <!-- ⬇️⬇️⬇️⬇️⬇️⬇️   【重要】 老師請注意：以下是您的設定區   ⬇️⬇️⬇️⬇️⬇️⬇️             -->
+    <!--                                                                           -->
+    // =========================================================================
     <script>
-        var DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbyr6TqsX8Uv7F7zsAi5Wi777ThTki_uLAskCpGQzEsfvCEaC1fE5vkstMllDgbQo5JjHA/exec";
-        var TEACHER_PASSWORD = "6888";
-        
-        var gameData = { levels: [
-            { levelNum: 1, title: "第一關：室內廚房危機", bgImg: "indoor.png", backupBgImg: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=1200", hotspots: [
-                {id:1,x:3.5,y:31,r:9,name:"窗台花盆底盤",desc:"花盆底盤積水是室內最常見的斑蚊孳生地點，需定期倒水清洗。"},
-                {id:2,x:15.5,y:52,r:8.5,name:"廚房水槽碗碟積水",desc:"水槽中堆疊的未洗碗盤容易積水，即使一小口水也能讓蚊子產卵。"},
-                {id:3,x:72,y:36.5,r:6.5,name:"飲水機水盤",desc:"飲水機接水盤、冰箱除霜水盤都是極易被遺忘的室內積水點。"},
-                {id:4,x:86.8,y:49.5,r:8,name:"浴室放置過久的水桶",desc:"用完的水桶應清洗後，倒置，避免積水"},
-                {id:5,x:25.6,y:91.4,r:10,name:"[衛教]潮濕的地毯",desc:"地毯潮濕主要會影響環境衛生"},
-                {id:6,x:93.4,y:25,r:8,name:"積水的花瓶、容器",desc:"閒置不用的容器應清除積水後倒置並保持乾燥"},
-                {id:7,x:55.7,y:37.9,r:8,name:"[衛教]有加蓋的冷水壺",desc:"盛裝水的容器有加蓋比較不會孳生蚊蟲"},
-                {id:8,x:16.5,y:31,r:8,name:"[衛教]盆栽",desc:"這個盆栽沒有會積水的接水盤喔！"},
-                {id:9,x:79.5,y:65.2,r:8,name:"[衛教]盛裝飲品的水杯",desc:"沒喝完的飲料在還沒孳生蚊蠅之前，就已經先發霉啦！記得隨手清洗食具，避免食物中毒。"},
-                {id:10,x:93.1,y:79.7,r:8,name:"[衛教]食器",desc:"沒積水的食具，沒收放整齊有礙觀瞻。"},
-                {id:11,x:21.2,y:48.3,r:8,name:"[衛教]廚房水槽碗碟積水",desc:"跟左邊那一疊一樣會有孳生蚊子的風險"},
-                {id:12,x:7.8,y:62.6,r:8,name:"[衛教]未食用的點心",desc:"只要是食物都要留意存放的地點跟溫度，盡早食用。"}
-            ]},
-            { levelNum: 2, title: "第二關：室外庭院清源", bgImg: "outdoor.png", backupBgImg: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&q=80&w=1200", hotspots: [
-                {id:3,x:47.5,y:81,r:12,name:"露天雨後地面積水",desc:"不平整的水泥地 or 石板路雨後易積水，應及時填平或掃乾淨。"},
-                {id:7,x:38.7,y:50,r:10,name:"露天鐵桶",desc:"閒置的大型容器下雨時迅速積水，必須倒置或蓋上細紗網。"},
-                {id:8,x:16.1,y:39.3,r:8,name:"防塵塑膠布皺褶",desc:"覆蓋雜物的塑膠帆布凹槽極易在雨後產生水袋積水，須拉平拉直。"},
-                {id:9,x:74.1,y:31.3,r:8,name:"大樹隱蔽樹洞",desc:"樹洞與竹筒也是病媒蚊隱秘的自然繁殖場所，可用泥沙填塞。"},
-                {id:11,x:84.2,y:79.3,r:8,name:"未加蓋的容器",desc:"下雨容易積水，孳生病媒蚊卵，應落實巡倒清刷..."},
-                {id:12,x:63.7,y:50.8,r:8,name:"廢棄容器",desc:"廢棄容器未加蓋，應倒置擺放，避免積水。"},
-                {id:13,x:58.2,y:60.4,r:8,name:"廢棄容器",desc:"廢棄容器建議加蓋或是倒置擺放。"},
-                {id:14,x:75.5,y:65.2,r:8,name:"潮濕的紙箱",desc:"潮濕的紙箱本身不會直接孳生蚊子，但它會吸收水氣、發霉並提供陰暗環境，吸引蚊子躲藏或吸引其他蚊蟲（如蟑螂、蠹蟲）進駐。"},
-                {id:15,x:17.2,y:82.4,r:12,name:"廢棄輪胎",desc:"輪胎的內部凹槽極易積水，且黑色吸熱也吸引蚊子。"}
-            ]}
-        ]};
+        // -------------------------------------------------------------------------
+        // 🚨 【設定步驟 1】 請在下面的雙引號 "" 內，精準貼上您的 GAS 網址。
+        // -------------------------------------------------------------------------
+        var DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbyr6TqsX8Uv7F7zsAi5Wi777ThTki_uLAskCpGQzEsfvCEaC1fE5vkstMllDgbQo5JjHA/exec"; 
 
-        // UI States
-        var playerClass = "701", playerName = "", currentLevelIndex = 0, foundHotspots = [], totalMistakes = 0, gameFinished = false, isTimerPaused = false, pauseStartTime = 0;
-        var AudioSynth = { ctx:null, init: function() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }, playSound: function(f, d) { try { this.init(); var o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.connect(g); g.connect(this.ctx.destination); o.frequency.value=f; g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime+d); o.start(); o.stop(this.ctx.currentTime+d); } catch(e){} }, playHit: function() { this.playSound(440, 0.1); }, playMiss: function() { this.playSound(150, 0.1); }, playLevelClear: function() { this.playSound(880, 0.5); }, playTriumph: function() { this.playSound(523, 1); } };
+        // -------------------------------------------------------------------------
+        // 🚨 【設定步驟 2】 進入後台密碼（預設為 6888）。
+        // -------------------------------------------------------------------------
+        var TEACHER_PASSWORD = "6888"; 
 
-        function startGame() {
-            playerName = document.getElementById('input-name').value.trim();
-            if(!playerName) return showAlert("warning", "哎呀！", "請輸入姓名！");
-            document.getElementById('screen-welcome').classList.add('hidden');
-            document.getElementById('screen-game').classList.remove('hidden');
-            loadLevel(0); startTime = performance.now(); startTimer();
+
+        // =========================================================================
+        //                 以下為遊戲主程式與資料庫，請勿隨意修改
+        // =========================================================================
+
+        var gameData = {
+            levels: [
+                {
+                    levelNum: 1,
+                    title: "第一關：室內廚房危機",
+                    bgImg: "indoor.png",
+                    backupBgImg: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=1200",
+                    hotspots: [
+                        {id:1,x:3.5,y:31,r:9,name:"窗台花盆底盤",desc:"花盆底盤積水是室內最常見的斑蚊孳生地點，需定期倒水清洗。", q:"花盆底盤只要有一點點積水，就會成為斑蚊繁殖的溫床嗎？", a:true},
+                        {id:2,x:15.5,y:52,r:8.5,name:"廚房水槽碗碟積水",desc:"水槽中堆疊的未洗碗盤容易積水，即使一小口水也能讓蚊子產卵。", q:"只要水槽裡的碗盤積水只有一小口，蚊子就絕對無法在裡面產卵嗎？", a:false},
+                        {id:3,x:72,y:36.5,r:6.5,name:"飲水機水盤",desc:"飲水機接水盤、冰箱除霜水盤都是極易被遺忘的室內積水點。", q:"飲水機接水盤因為常有熱水經過，所以是完全安全，絕對不會孳生斑蚊的？", a:false},
+                        {id:4,x:86.8,y:49.5,r:8,name:"浴室放置過久的水桶",desc:"用完的水桶應清洗後，倒置，避免積水", q:"用完的水桶應該清洗乾淨後直接正立擺放，不需倒置？", a:false},
+                        {id:5,x:25.6,y:91.4,r:10,name:"[衛教]潮濕的地毯",desc:"地毯潮濕主要會影響環境衛生", q:"潮濕的地毯通常只會影響環境衛生與發霉，並不是登革熱病媒蚊首選的積水產卵容器？", a:true},
+                        {id:6,x:93.4,y:25,r:8,name:"積水的花瓶、容器",desc:"閒置不用的容器應清除積水後倒置並保持乾燥", q:"閒置不用的容器不需要倒置，只要放在室內乾淨環境下就不會長孑孓？", a:false},
+                        {id:7,x:55.7,y:37.9,r:8,name:"[衛教]有加蓋的冷水壺",desc:"盛裝水的容器有加蓋比較不會孳生蚊蟲", q:"盛裝水的容器如果平時有蓋好蓋子，就能有效防止病媒蚊進去產卵？", a:true},
+                        {id:8,x:16.5,y:31,r:8,name:"[衛教]盆栽",desc:"這個盆栽沒有會積水的接水盤喔！", q:"這個盆栽下方沒有擺放接水盤，因此它不是病媒蚊高風險的孳生地點？", a:true},
+                        {id:9,x:79.5,y:65.2,r:8,name:"[衛教]盛裝飲品的水杯",desc:"沒喝完的飲料在還沒孳生蚊蠅之前，就已經先發霉啦！記得隨手清洗食具，避免食物中毒。", q:"沒喝完的飲料杯放在桌上，最快產生的衛生問題通常是發霉與細菌滋生？", a:true},
+                        {id:10,x:93.1,y:79.7,r:8,name:"[衛教]食器",desc:"沒積水的食具，沒收放整齊有礙觀瞻。", q:"完全沒有積水的乾淨食器，依然會提供水份讓登革熱斑蚊產卵？", a:false},
+                        {id:11,x:21.2,y:48.3,r:8,name:"[衛教]廚房水槽碗碟積水",desc:"跟左邊那一疊一樣會有孳生蚊子的風險", q:"廚房堆積多日的碗盤，無論在水槽左側還是右側，只要有積水都有孳生登革熱病媒蚊的風險？", a:true},
+                        {id:12,x:7.8,y:62.6,r:8,name:"[衛教]未食用的點心",desc:"只要是食物都要留意存放的地點跟溫度，盡早食用。", q:"未食用的點心如果完全乾燥沒有積水，通常不會孳生蚊子，但會吸引蟑螂和螞蟻？", a:true}
+                    ]
+                },
+                {
+                    levelNum: 2,
+                    title: "第二關：室外庭院清源",
+                    bgImg: "outdoor.png",
+                    backupBgImg: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&q=80&w=1200",
+                    hotspots: [
+                        {id:3,x:47.5,y:81,r:12,name:"露天雨後地面積水",desc:"不平整的水泥地 or 石板路雨後易積水，應及時填平或掃乾淨。", q:"戶外的石板路或水泥地凹凸不平產生積水，我們應該及時填平或掃除，以防蚊蟲孳生？", a:true},
+                        {id:7,x:38.7,y:50,r:10,name:"露天鐵桶",desc:"閒置的大型容器下雨時迅速積水，必須倒置或蓋上細紗網。", q:"露天擺放的大鐵桶如果不蓋細紗網，下雨時很容易積水孳生大量孑孓？", a:true},
+                        {id:8,x:16.1,y:39.3,r:8,name:"防塵塑膠布皺褶",desc:"覆蓋雜物的塑膠帆布凹槽極易在雨後產生水袋積水，須拉平拉直。", q:"防雨防塵的塑膠帆布如果皺褶產生積水，病媒蚊是絕對不會在這種「人工塑膠材質」裡面產卵的？", a:false},
+                        {id:9,x:74.1,y:31.3,r:8,name:"大樹隱蔽樹洞",desc:"樹洞與竹筒也是病媒蚊隱秘的自然繁殖場所，可用泥沙填塞。", q:"樹幹上的樹洞與砍斷的竹筒，因為是自然植物的一部分，所以登革熱病媒蚊絕對不會在裡面繁殖？", a:false},
+                        {id:11,x:84.2,y:79.3,r:8,name:"未加蓋的容器",desc:"下雨容易積水，孳生病媒蚊卵，應落實巡倒清刷...", q:"下雨天後，我們應落實「巡、倒、清、刷」來清除未加蓋容器的積水？", a:true},
+                        {id:12,x:63.7,y:50.8,r:8,name:"廢棄容器",desc:"廢棄容器未加蓋，應倒置擺放，避免積水。", q:"暫時不用的廢棄容器，最好的擺放方式是開口朝上直接露天放著？", a:false},
+                        {id:13,x:58.2,y:60.4,r:8,name:"廢棄容器",desc:"廢棄容器建議加蓋或是倒置擺放。", q:"露天的廢棄容器如果無法清除，建議要加蓋或者完全倒置擺放？", a:true},
+                        {id:14,x:75.5,y:65.2,r:8,name:"潮濕的紙箱",desc:"潮濕的紙箱本身不會直接孳生蚊子，但它會吸收水氣、發霉並提供陰暗環境，吸引蚊子躲藏或吸引其他蚊蟲（如蟑螂、蠹蟲）進駐。", q:"潮濕發霉的紙箱雖然不會直接孳生孑哓，但會提供陰暗潮濕環境吸引成蚊躲藏？", a:true},
+                        {id:15,x:17.2,y:82.4,r:12,name:"廢棄輪胎",desc:"輪胎的內部凹槽極易積水，且黑色吸熱也吸引蚊子。", q:"廢棄輪胎因為呈黑色且有弧形凹槽，在雨後極容易積水並吸引蚊子產卵？", a:true}
+                    ]
+                }
+            ]
+        };
+
+        var playerClass = "701";
+        var playerName = "";
+        var currentLevelIndex = 0;
+        var foundHotspots = [];
+        var totalMistakes = 0;
+        var cloudRosterData = null; 
+        var startTime = 0;
+        var elapsedTime = 0;
+        var timerInterval = null;
+        var gameFinished = false;
+        var gasWebappUrl = "";
+        var isDragging = false;
+        var activeDragSpotId = null;
+
+        // 🧠 時間暫停狀態與變數，確保學生閱讀衛教說明與答題時「時間完全靜止」！
+        var isTimerPaused = false;
+        var pauseStartTime = 0;
+
+        // 💡 答題臨時變數
+        var currentQuizSpot = null;
+        var currentQuizCoordinates = {x: 0, y: 0};
+
+        var AudioSynth = {
+            ctx: null,
+            init: function() {
+                if (!this.ctx) {
+                    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } 
+                    catch(e) { console.warn("瀏覽器不支援 Web Audio API"); }
+                }
+            },
+            playSound: function(notes, duration, type) {
+                if (!type) type = "sine";
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    var ctx = this.ctx;
+                    var now = ctx.currentTime;
+                    notes.forEach(function(note, idx) {
+                        var osc = ctx.createOscillator();
+                        var gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.type = type;
+                        osc.frequency.setValueAtTime(note.f, now + (idx * note.t));
+                        if (note.ramp) osc.frequency.exponentialRampToValueAtTime(note.ramp, now + (idx * note.t) + note.d);
+                        gain.gain.setValueAtTime(note.v || 0.15, now + (idx * note.t));
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + (idx * note.t) + note.d);
+                        osc.start(now + (idx * note.t));
+                        osc.stop(now + (idx * note.t) + note.d);
+                    });
+                } catch(e) { console.warn("播放音效錯誤：", e); }
+            },
+            playHit: function() { this.playSound([{ f: 150, ramp: 800, d: 0.15, t: 0, v: 0.3 }], 0.16); },
+            playMiss: function() { this.playSound([{ f: 120, d: 0.07, t: 0, v: 0.2 }, { f: 80, d: 0.07, t: 0.08, v: 0.2 }], 0.15, "sawtooth"); },
+            playLevelClear: function() { this.playSound([{ f: 261.63, d: 0.3, t: 0.1 }, { f: 329.63, d: 0.3, t: 0.2 }, { f: 392.00, d: 0.3, t: 0.3 }, { f: 523.25, d: 0.3, t: 0.4 }], 0.5, "triangle"); },
+            playTriumph: function() { this.playSound([{ f: 392.00, d: 0.1, t: 0.12 }, { f: 523.25, d: 0.1, t: 0.24 }, { f: 659.25, d: 0.1, t: 0.36 }, { f: 783.99, d: 0.3, t: 0.48 }, { f: 659.25, d: 0.1, t: 0.8 }, { f: 783.99, d: 0.6, t: 0.95 }], 1.5); }
+        };
+
+        window.addEventListener('DOMContentLoaded', function() {
+            try {
+                var urlParams = new URLSearchParams(window.location.search);
+                var queryGas = urlParams.get('gas');
+                if (queryGas) {
+                    gasWebappUrl = decodeURIComponent(queryGas).trim();
+                    localStorage.setItem('dengue_gas_url', gasWebappUrl); 
+                } else if (localStorage.getItem('dengue_gas_url')) {
+                    gasWebappUrl = localStorage.getItem('dengue_gas_url').trim();
+                } else {
+                    gasWebappUrl = DEFAULT_GAS_URL.trim();
+                }
+                
+                var gasInput = document.getElementById('setting-gas-url');
+                if (gasInput) gasInput.value = gasWebappUrl;
+                
+                if (localStorage.getItem('dengue_game_config')) {
+                    gameData = JSON.parse(localStorage.getItem('dengue_game_config'));
+                }
+                
+                var rosterTimeout = setTimeout(function() {
+                    if (!cloudRosterData && gasWebappUrl) {
+                        var warnElem = document.getElementById('connection-warning');
+                        if (warnElem) warnElem.classList.remove('hidden');
+                        handleClassChange();
+                    }
+                }, 3000);
+
+                fetchRosterFromCloud(rosterTimeout);
+                loadEditorLevel();
+
+                window.addEventListener('mousemove', handleGlobalMouseMove);
+                window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+                window.addEventListener('mouseup', handleGlobalMouseUp);
+                window.addEventListener('touchend', handleGlobalTouchEnd);
+            } catch (e) {
+                var warnElem2 = document.getElementById('connection-warning');
+                if (warnElem2) warnElem2.classList.remove('hidden');
+                handleClassChange();
+            }
+        });
+
+        function fetchRosterFromCloud(timeoutTimer) {
+            if (!gasWebappUrl) {
+                if (timeoutTimer) clearTimeout(timeoutTimer);
+                handleClassChange();
+                return;
+            }
+            try {
+                fetch(gasWebappUrl + "?action=getRoster")
+                    .then(function(res) { if (!res.ok) throw new Error("HTTP錯誤"); return res.json(); })
+                    .then(function(data) {
+                        if (timeoutTimer) clearTimeout(timeoutTimer);
+                        if (data && data.classes && data.classes.length > 0) {
+                            cloudRosterData = data;
+                            var statusElem = document.getElementById('roster-status');
+                            if (statusElem) {
+                                statusElem.classList.remove('hidden');
+                                statusElem.classList.add('flex');
+                            }
+                            populateClassesDropdown(data.classes);
+                        } else {
+                            handleClassChange();
+                        }
+                    })
+                    .catch(function(err) {
+                        if (timeoutTimer) clearTimeout(timeoutTimer);
+                        var warnElem = document.getElementById('connection-warning');
+                        if (warnElem) warnElem.classList.remove('hidden');
+                        handleClassChange();
+                    });
+            } catch(e) {
+                if (timeoutTimer) clearTimeout(timeoutTimer);
+                var warnElem = document.getElementById('connection-warning');
+                if (warnElem) warnElem.classList.remove('hidden');
+                handleClassChange();
+            }
         }
 
-        function loadLevel(idx) {
-            currentLevelIndex = idx; foundHotspots = [];
-            const level = gameData.levels[idx];
+        function populateClassesDropdown(classes) {
+            var classSelect = document.getElementById('input-class');
+            if(!classSelect) return;
+            classSelect.innerHTML = '';
+            classes.forEach(function(cls) {
+                var opt = document.createElement('option');
+                opt.value = cls; opt.innerText = cls + " 班";
+                classSelect.appendChild(opt);
+            });
+            var testOpt = document.createElement('option');
+            testOpt.value = "教師測試"; testOpt.innerText = "教師/訪客 測試";
+            classSelect.appendChild(testOpt);
+            handleClassChange();
+        }
+
+        function handleClassChange() {
+            var classSelect = document.getElementById('input-class');
+            var selectedClass = classSelect ? classSelect.value : "701";
+            var container = document.getElementById('student-name-input-container');
+            if (!container) return;
+
+            if (cloudRosterData && cloudRosterData.students && cloudRosterData.students[selectedClass]) {
+                var students = cloudRosterData.students[selectedClass];
+                students.sort(function(a, b) { return parseInt(a.seat || 0) - parseInt(b.seat || 0); });
+                var dropdownHtml = '<div class="relative"><select id="input-name" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 appearance-none font-bold text-slate-700">';
+                students.forEach(function(student) {
+                    var label = student.seat ? student.seat + "號 - " + student.name : student.name;
+                    dropdownHtml += '<option value="' + student.name + '">' + label + '</option>';
+                });
+                dropdownHtml += '</select><div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-teal-500"><i class="fa-solid fa-chevron-down"></i></div></div>';
+                container.innerHTML = dropdownHtml;
+            } else {
+                container.innerHTML = '<input type="text" id="input-name" placeholder="例如：林小明" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 font-bold text-slate-700 placeholder-slate-400">';
+            }
+        }
+
+        function startGame() {
+            var classInput = document.getElementById('input-class');
+            var nameInput = document.getElementById('input-name');
+            playerClass = classInput ? classInput.value : "701";
+            playerName = nameInput ? nameInput.value.trim() : "";
+            if (!playerName) { showAlert("warning", "哎呀！", "請選擇或輸入您的姓名才能開始競賽。"); return; }
+
+            currentLevelIndex = 0; totalMistakes = 0; gameFinished = false; elapsedTime = 0;
+            document.getElementById('hud-player-info').innerText = playerClass + " - " + playerName;
+            document.getElementById('hud-mistakes').innerText = totalMistakes + " 次";
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            loadLevel(0);
+            startTime = performance.now();
+            startTimer();
+        }
+
+        function loadLevel(index) {
+            currentLevelIndex = index;
+            var level = gameData.levels[index];
+            foundHotspots = [];
+
             document.getElementById('hud-level-num').innerText = level.levelNum;
             document.getElementById('hud-found-count').innerText = "0";
-            document.getElementById('hud-total-count').innerText = level.hotspots.filter(h => !h.name.startsWith("[衛教]")).length;
-            document.getElementById('game-bg-image').src = level.bgImg;
+            
+            // 計算總過關需求數時，自動扣除 [衛教] 熱點
+            var targetSpots = level.hotspots.filter(function(h) {
+                return h.name && h.name.indexOf("[衛教]") !== 0;
+            });
+            document.getElementById('hud-total-count').innerText = targetSpots.length;
+            document.getElementById('hud-progress-bar').style.width = "0%";
+
             document.getElementById('found-markers-layer').innerHTML = '';
+            document.getElementById('feedback-layer').innerHTML = '';
+
+            var bgImgElement = document.getElementById('game-bg-image');
+            bgImgElement.src = level.bgImg;
+            bgImgElement.onerror = function() { this.src = level.backupBgImg; };
         }
 
         function startTimer() {
-            timerInterval = setInterval(() => { if(!gameFinished && !isTimerPaused) { elapsedTime = (performance.now() - startTime) / 1000; document.getElementById('hud-timer').innerText = formatTime(elapsedTime); } }, 33);
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(function() {
+                if (gameFinished || isTimerPaused) return; // 💡 暫停時不計時
+                elapsedTime = (performance.now() - startTime) / 1000;
+                document.getElementById('hud-timer').innerText = formatTime(elapsedTime);
+            }, 33);
         }
 
-        function formatTime(secs) { return (Math.floor(secs/60)).toString().padStart(2,'0') + ":" + (Math.floor(secs%60)).toString().padStart(2,'0') + "." + Math.floor((secs%1)*100).toString().padStart(2,'0'); }
+        function formatTime(secs) {
+            var m = Math.floor(secs / 60).toString().padStart(2, '0');
+            var s = Math.floor(secs % 60).toString().padStart(2, '0');
+            var ms = Math.floor((secs % 1) * 100).toString().padStart(2, '0');
+            return m + ":" + s + "." + ms;
+        }
 
         function handleBoardClick(e) {
-            if(gameFinished || isTimerPaused) return;
-            const rect = document.getElementById('game-click-layer').getBoundingClientRect();
-            const clickX = ((e.clientX - rect.left) / rect.width) * 100, clickY = ((e.clientY - rect.top) / rect.height) * 100;
-            for(let spot of gameData.levels[currentLevelIndex].hotspots) {
-                if(Math.sqrt(Math.pow(clickX - spot.x, 2) + Math.pow(clickY - spot.y, 2)) <= spot.r) {
-                    if(foundHotspots.includes(spot.id)) return;
-                    handleSuccessfulHit(spot); return;
+            if (gameFinished || isTimerPaused) return; // 💡 暫停時不接受任何背景點擊
+            var clickLayer = document.getElementById('game-click-layer');
+            var rect = clickLayer.getBoundingClientRect();
+            var clickX = ((e.clientX - rect.left) / rect.width) * 100;
+            var clickY = ((e.clientY - rect.top) / rect.height) * 100;
+
+            var currentLevel = gameData.levels[currentLevelIndex];
+            var foundMatch = false;
+
+            for (var i = 0; i < currentLevel.hotspots.length; i++) {
+                var spot = currentLevel.hotspots[i];
+                var distance = Math.sqrt(Math.pow(clickX - spot.x, 2) + Math.pow(clickY - spot.y, 2));
+                if (distance <= spot.r) {
+                    foundMatch = true;
+                    
+                    // 🎯 核心升級：若該點已經找過了，跳出綠色文字提示，絕對不扣分（也不重複加分），避免學生有挫折感
+                    if (foundHotspots.indexOf(spot.id) !== -1) {
+                        createVisualFeedback(clickX, clickY, "✔️ 已經找過囉！", "text-emerald-600 font-extrabold text-sm drop-shadow-md animate-floatText absolute");
+                        AudioSynth.playHit(); 
+                    } else {
+                        handleSuccessfulHit(spot, clickX, clickY);
+                    }
+                    break;
                 }
             }
-            handleMiss();
+            if (!foundMatch) handleMiss(clickX, clickY);
         }
 
-        let currentQuizSpot = null, pendingLevelCompletion = false;
-        function handleSuccessfulHit(spot) {
-            foundHotspots.push(spot.id);
-            const isEdu = spot.name.startsWith("[衛教]");
-            if(!isEdu) {
-                document.getElementById('hud-found-count').innerText = foundHotspots.filter(id => !gameData.levels[currentLevelIndex].hotspots.find(h => h.id === id).name.startsWith("[衛教]")).length;
-                if(foundHotspots.filter(id => !gameData.levels[currentLevelIndex].hotspots.find(h => h.id === id).name.startsWith("[衛教]")).length >= gameData.levels[currentLevelIndex].hotspots.filter(h => !h.name.startsWith("[衛教]")).length) pendingLevelCompletion = true;
+        // 衛教熱點與過關熱點的獨立判定邏輯
+        function handleSuccessfulHit(spot, x, y) {
+            // 💡 核心機制：點對時立刻暫停背景計時
+            if (!gameFinished) {
+                isTimerPaused = true;
+                pauseStartTime = performance.now();
+                var pauseIndicator = document.getElementById('timer-status-indicator');
+                if (pauseIndicator) pauseIndicator.classList.remove('hidden');
             }
-            
-            isTimerPaused = true; pauseStartTime = performance.now();
-            document.getElementById('timer-status-indicator').classList.remove('hidden');
-            
+
+            // 保存臨時挑戰資料
             currentQuizSpot = spot;
-            document.getElementById('alert-title').innerHTML = isEdu ? "💡 衛教小貼士" : "✨ 發現孳生源！";
-            document.getElementById('alert-text').innerHTML = `<strong>【${spot.name.replace("[衛教]","")}】</strong><br>${spot.desc}`;
+            currentQuizCoordinates = {x: x, y: y};
+
+            // 判斷是否為衛教熱點
+            var isEducational = spot.name && spot.name.indexOf("[衛教]") === 0;
+            var title = isEducational ? "💡 衛教小貼士" : "✨ 發現孳生源！";
+            var cleanName = spot.name ? spot.name.replace("[衛教]", "").trim() : "";
+
+            // 隨機建立答題 Q&A 系統。若資料庫有自訂題目則使用自訂，無則自動產生防呆題目。
+            var questionText = spot.q || "針對「" + cleanName + "」，日常落實「巡、倒、清、刷」是清除登革熱病媒蚊的最佳方式嗎？";
+            var correctAnswer = typeof spot.a !== "undefined" ? spot.a : true;
+
+            // 顯示答題對話框
+            showQuizModal(title, "<strong>【" + cleanName + "】</strong><br><span class=\"text-slate-600 font-medium text-xs leading-relaxed mt-2 block\">" + spot.desc + "</span>", questionText);
+        }
+
+        function showQuizModal(title, text, question) {
+            var alertModal = document.getElementById('custom-alert');
+            var alertIcon = document.getElementById('alert-icon');
             
-            if(!isEdu) {
-                document.getElementById('quiz-container').classList.remove('hidden');
-                document.getElementById('alert-btn').classList.add('hidden');
-            } else {
-                document.getElementById('quiz-container').classList.add('hidden');
-                document.getElementById('alert-btn').classList.remove('hidden');
-            }
-            document.getElementById('custom-alert').classList.remove('hidden'); document.getElementById('custom-alert').classList.add('flex');
-            createSuccessMarker(spot.x, spot.y);
+            alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-teal-100 text-teal-500 animate-bounce";
+            alertIcon.innerHTML = '<i class="fa-solid fa-mosquito"></i>';
+            
+            document.getElementById('alert-title').innerHTML = title;
+            document.getElementById('alert-text').innerHTML = text;
+            
+            // 啟用 O/X 答題區塊，顯示題目
+            document.getElementById('quiz-block').classList.remove('hidden');
+            document.getElementById('quiz-question-text').innerHTML = question;
+            
+            // 隱藏一般確定按鈕，顯示 O/X 互動按鈕
+            document.getElementById('alert-btn').classList.add('hidden');
+            document.getElementById('alert-quiz-buttons').classList.remove('hidden');
+            
+            alertModal.classList.remove('hidden');
+            alertModal.classList.add('flex');
         }
 
-        function handleQuizAnswer(isO) {
-            if(isO) { startTime += 3000; showAlert("success", "🎉 答對了！", "正確觀念！系統給予減 3 秒獎勵。"); }
-            else { startTime -= 10000; totalMistakes+=3; showAlert("warning", "❌ 答錯了！", "再看一次說明喔！系統加罰 10 秒。"); }
-            document.getElementById('quiz-container').classList.add('hidden');
+        function submitQuizAnswer(chosenAnswer) {
+            var isCorrect = (chosenAnswer === currentQuizSpot.a);
+            var cleanName = currentQuizSpot.name.replace("[衛教]", "").trim();
+            var alertIcon = document.getElementById('alert-icon');
+            var alertTitle = document.getElementById('alert-title');
+            var alertText = document.getElementById('alert-text');
+
+            // 關閉問答區按鈕與問題 block
+            document.getElementById('quiz-block').classList.add('hidden');
+            document.getElementById('alert-quiz-buttons').classList.add('hidden');
             document.getElementById('alert-btn').classList.remove('hidden');
+            document.getElementById('alert-btn').innerText = "繼續挑戰";
+
+            if (isCorrect) {
+                // 🏆 答對獎勵：播放通關音，從累計成績中直接扣除 3 秒！
+                AudioSynth.playLevelClear();
+                startTime += 3000; // 扣除 3000 毫秒
+
+                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-emerald-100 text-emerald-500 animate-bounce";
+                alertIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                alertTitle.innerHTML = "🎉 答對了！過關！";
+                alertText.innerHTML = "太棒了！您對「<b>" + cleanName + "</b>」的防護觀念完全正確！<br><br><span class=\"text-emerald-600 font-extrabold text-base tracking-wide flex items-center justify-center gap-1\"><i class=\"fa-solid fa-bolt\"></i> 獲得防疫神速獎勵：總秒數減 3 秒！</span>";
+                
+                // 本熱點正式視為被清除 (衛教點不列入統計但會在地圖打勾標示)
+                registerSplatSuccess();
+            } else {
+                // ❌ 答錯懲罰：播放答錯蜂鳴音，罰時加 10 秒！
+                AudioSynth.playMiss();
+                startTime -= 10000; // 增加 10000 毫秒
+                totalMistakes++; // 視為失誤一次
+                document.getElementById('hud-mistakes').innerText = totalMistakes + " 次";
+
+                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-rose-100 text-rose-500 animate-pulse";
+                alertIcon.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+                alertTitle.innerHTML = "❌ 答錯了！病媒蚊趁機孳生！";
+                
+                var correctAnswerText = currentQuizSpot.a ? "正確 (O)" : "錯誤 (X)";
+                alertText.innerHTML = "防護觀念有誤！該選項正確應為：<b>" + correctAnswerText + "</b>。<br>病媒蚊已在「<b>" + cleanName + "</b>」積水處產卵成功，防疫失守！<br><br><span class=\"text-rose-600 font-extrabold text-base tracking-wide flex items-center justify-center gap-1\"><i class=\"fa-solid fa-skull-crossbones\"></i> 遭受病媒蚊奇襲懲罰：總秒數加罰 10 秒！</span><br><span class=\"text-slate-500 text-xs block mt-1\">請再次詳讀衛教說明： " + currentQuizSpot.desc + "</span>";
+                
+                // 依然標註已被找過，但付出慘痛代價
+                registerSplatSuccess();
+            }
         }
 
-        function handleMiss() { totalMistakes++; startTime -= 3000; document.getElementById('hud-mistakes').innerText = totalMistakes + " 次"; AudioSynth.playMiss(); }
+        function registerSplatSuccess() {
+            var spot = currentQuizSpot;
+            var x = currentQuizCoordinates.x;
+            var y = currentQuizCoordinates.y;
 
-        function createSuccessMarker(x, y) {
-            const m = document.createElement('div');
-            m.className = "absolute w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm shadow-md animate-splat";
-            m.style.left = x + "%"; m.style.top = y + "%"; m.style.transform = 'translate(-50%,-50%)';
-            m.innerHTML = '<i class="fa-solid fa-check"></i>';
-            document.getElementById('found-markers-layer').appendChild(m);
+            foundHotspots.push(spot.id);
+            createVisualFeedback(x, y, "💥", "text-rose-500 font-extrabold text-2xl scale-150 animate-ping absolute");
+            createSuccessMarker(spot.x, spot.y, spot.name);
+
+            // 計算當前進度（自動排除 [衛教] 熱點）
+            var level = gameData.levels[currentLevelIndex];
+            var targetSpots = level.hotspots.filter(function(h) { return h.name && h.name.indexOf("[衛教]") !== 0; });
+            var totalCleanable = targetSpots.length;
+            
+            var clearedCount = foundHotspots.filter(function(id) {
+                var s = level.hotspots.find(function(h) { return h.id === id; });
+                return s && s.name && s.name.indexOf("[衛教]") !== 0;
+            }).length;
+
+            document.getElementById('hud-found-count').innerText = clearedCount;
+            document.getElementById('hud-progress-bar').style.width = (totalCleanable === 0 ? 100 : (clearedCount / totalCleanable) * 100) + "%";
+
+            // 判斷關卡是否通關
+            if (clearedCount >= totalCleanable) {
+                activeAlertCallback = function() {
+                    handleLevelComplete();
+                };
+            } else {
+                activeAlertCallback = null;
+            }
         }
 
-        function closeAlert() {
-            document.getElementById('custom-alert').classList.add('hidden');
-            isTimerPaused = false; startTime += (performance.now() - pauseStartTime);
-            document.getElementById('timer-status-indicator').classList.add('hidden');
-            if(pendingLevelCompletion) { pendingLevelCompletion = false; handleLevelComplete(); }
+        function handleMiss(x, y) {
+            totalMistakes++;
+            AudioSynth.playMiss();
+            startTime -= 3000; 
+            document.getElementById('hud-mistakes').innerText = totalMistakes + " 次";
+            createVisualFeedback(x, y, "❌ 誤點罰時 +3秒", "text-rose-600 font-black text-sm drop-shadow-md animate-floatText absolute");
+        }
+
+        function createVisualFeedback(x, y, text, classes) {
+            var layer = document.getElementById('feedback-layer');
+            var element = document.createElement('div');
+            element.className = classes;
+            element.style.left = x + "%"; element.style.top = y + "%";
+            element.style.transform = 'translate(-50%, -50%)';
+            element.innerText = text;
+            layer.appendChild(element);
+            setTimeout(function() { element.remove(); }, 1500);
+        }
+
+        function createSuccessMarker(x, y, name) {
+            var layer = document.getElementById('found-markers-layer');
+            var marker = document.createElement('div');
+            // ✅ 大打勾立體陰影符號，固定鎖定在物件正中央
+            marker.className = "absolute w-12 h-12 bg-emerald-500 border-4 border-white rounded-full flex items-center justify-center text-white text-xl shadow-xl transition-all duration-300 animate-splat";
+            marker.style.left = x + "%"; marker.style.top = y + "%";
+            marker.style.transform = 'translate(-50%, -50%)';
+            marker.innerHTML = '<i class="fa-solid fa-check"></i>';
+            marker.title = name;
+            layer.appendChild(marker);
         }
 
         function handleLevelComplete() {
             AudioSynth.playLevelClear();
-            if(currentLevelIndex === gameData.levels.length - 1) endGameSession();
-            else showAlert("success", "🏆 關卡完成！", "前進下一關！", () => loadLevel(currentLevelIndex + 1));
+            if (currentLevelIndex === gameData.levels.length - 1) {
+                endGameSession();
+            } else {
+                showAlert("success", "🏆 關卡完成！", "做得太棒了！已清除本區域所有登革熱病媒蚊。準備進入下一關大掃除！", function() {
+                    loadLevel(currentLevelIndex + 1);
+                });
+            }
         }
 
-        function endGameSession() { gameFinished = true; showAlert("success", "🎊 全關卡通關！", "成績已記錄！"); }
+        function endGameSession() {
+            gameFinished = true;
+            clearInterval(timerInterval);
+            AudioSynth.playTriumph();
+
+            var finalScore = (elapsedTime + (totalMistakes * 3)).toFixed(2);
+            var newRecord = {
+                id: Date.now().toString(), class: playerClass, name: playerName,
+                rawTime: elapsedTime, mistakes: totalMistakes, finalScore: parseFloat(finalScore),
+                date: new Date().toLocaleDateString('zh-TW')
+            };
+
+            var localRecords = JSON.parse(localStorage.getItem('dengue_scores') || '[]');
+            localRecords.push(newRecord);
+            localStorage.setItem('dengue_scores', JSON.stringify(localRecords));
+
+            postScoreToGAS(newRecord);
+            showAlert("success", "🎉 恭喜通關！", "完成挑戰！<br>原始時間：" + formatTime(elapsedTime) + "<br>失誤：" + totalMistakes + " 次 (加罰 " + (totalMistakes * 3) + " 秒)<br><span class=\"text-rose-600 font-extrabold text-lg\">總評分成績：" + finalScore + " 秒</span>", function() {
+                showLeaderboard();
+            });
+        }
+
+        function showLeaderboard() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-scoreboard').classList.remove('hidden');
+            document.getElementById('score-class-title').innerText = playerClass;
+            filterRank('current');
+        }
+
+        function filterRank(type) {
+            var btnCurrent = document.getElementById('btn-filter-current');
+            var btnAll = document.getElementById('btn-filter-all');
+            var tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin text-teal-500 mr-2"></i>更新榜單中...</td></tr>';
+
+            if (type === 'current') {
+                btnCurrent.className = "flex-1 py-2 rounded-xl text-sm font-extrabold bg-white text-teal-800 shadow-sm transition";
+                btnAll.className = "flex-1 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-white/50 transition";
+                fetchScoresFromServer(function(scores) { renderScores(scores.filter(function(s) { return s.class === playerClass; })); });
+            } else {
+                btnAll.className = "flex-1 py-2 rounded-xl text-sm font-extrabold bg-white text-teal-800 shadow-sm transition";
+                btnCurrent.className = "flex-1 py-2 rounded-xl text-sm font-bold text-slate-600 hover:bg-white/50 transition";
+                fetchScoresFromServer(function(scores) { renderScores(scores); });
+            }
+        }
+
+        function renderScores(scores) {
+            var tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+            var sorted = scores.sort(function(a, b) { return a.finalScore - b.finalScore; });
+            if (sorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-12 text-center text-slate-400 font-bold">目前無競賽紀錄，快來當第一名吧！</td></tr>';
+                return;
+            }
+            sorted.forEach(function(score, index) {
+                var isTop3 = index < 3;
+                var medalColors = ["text-amber-400", "text-slate-400", "text-amber-600"];
+                var rankDisplay = isTop3 ? '<i class="fa-solid fa-medal ' + medalColors[index] + ' text-xl"></i>' : index + 1;
+                var tr = document.createElement('tr');
+                tr.className = "border-b border-slate-50 hover:bg-slate-50/50 transition duration-150";
+                tr.innerHTML = '<td class="py-3 px-4 text-center font-black text-slate-600">' + rankDisplay + '</td>' +
+                    '<td class="py-3 px-4"><span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded mr-2">' + score.class + '</span><span class="text-slate-800 font-extrabold">' + score.name + '</span></td>' +
+                    '<td class="py-3 px-4 text-center font-bold text-rose-600 font-mono">' + score.finalScore.toFixed(2) + 's</td>' +
+                    '<td class="py-3 px-4 text-center text-slate-400 text-xs font-bold">+' + (score.mistakes * 3) + '秒 (' + score.mistakes + '次)</td>';
+                tbody.appendChild(tr);
+            });
+        }
+
+        function fetchScoresFromServer(callback) {
+            if (!gasWebappUrl) {
+                callback(JSON.parse(localStorage.getItem('dengue_scores') || '[]'));
+                return;
+            }
+            try {
+                fetch(gasWebappUrl + "?action=getScores")
+                    .then(function(res) { if (!res.ok) throw new Error("HTTP 狀態碼錯誤"); return res.json(); })
+                    .then(function(data) { callback(data); })
+                    .catch(function(err) {
+                        console.error("GAS 雲端分數獲取失敗，改讀本地：", err);
+                        callback(JSON.parse(localStorage.getItem('dengue_scores') || '[]'));
+                    });
+            } catch (e) {
+                callback(JSON.parse(localStorage.getItem('dengue_scores') || '[]'));
+            }
+        }
+
+        function postScoreToGAS(scoreItem) {
+            if (!gasWebappUrl) return;
+            try {
+                fetch(gasWebappUrl, {
+                    method: "POST", mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "addScore", data: scoreItem })
+                }).catch(function(err) { console.error("雲端試算表傳輸失敗：", err); });
+            } catch(e) {}
+        }
+
+        function resetToWelcome() {
+            document.getElementById('screen-scoreboard').classList.add('hidden');
+            document.getElementById('screen-welcome').classList.remove('hidden');
+        }
+
+        function shareScore() {
+            var finalScore = (elapsedTime + (totalMistakes * 3)).toFixed(2);
+            var shareText = "🏆 【登革熱獵人】病媒蚊防治清除賽！我代表 " + playerClass + " 完成了全關卡挑戰！\n⏱ 累計成績總分：" + finalScore + " 秒！快來超越我！";
+            var tempText = document.createElement('textarea');
+            tempText.value = shareText; document.body.appendChild(tempText);
+            tempText.select(); document.execCommand('copy'); document.body.removeChild(tempText);
+            showAlert("success", "複製成功！", "已將成績挑戰誓言複製到你的剪貼簿，趕快貼給其他同學吧！");
+        }
+
+        var activeAlertCallback = null;
+        function showAlert(type, title, text, callback) {
+            var alertModal = document.getElementById('custom-alert');
+            var alertIcon = document.getElementById('alert-icon');
+            activeAlertCallback = callback || null;
+            if (type === "success") {
+                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-emerald-100 text-emerald-500 animate-bounce";
+                alertIcon.innerHTML = '<i class="fa-solid fa-square-check"></i>';
+            } else if (type === "warning") {
+                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-amber-100 text-amber-500 animate-pulse";
+                alertIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            }
+            
+            // 確保 O/X 問答區隱藏，回歸普通視窗
+            document.getElementById('quiz-block').classList.add('hidden');
+            document.getElementById('alert-quiz-buttons').classList.add('hidden');
+            document.getElementById('alert-btn').classList.remove('hidden');
+            document.getElementById('alert-btn').innerText = "確定";
+
+            document.getElementById('alert-title').innerHTML = title;
+            document.getElementById('alert-text').innerHTML = text;
+            alertModal.classList.remove('hidden'); alertModal.classList.add('flex');
+        }
+
+        function closeAlert() {
+            var alertModal = document.getElementById('custom-alert');
+            alertModal.classList.add('hidden'); alertModal.classList.remove('flex');
+
+            // 💡 當對話框關閉時，計算「暫停期間的時間差」加回遊戲啟動時間中，使這段閱讀答題時間完全不計！
+            if (isTimerPaused) {
+                isTimerPaused = false;
+                var pauseEndTime = performance.now();
+                var pauseDuration = pauseEndTime - pauseStartTime;
+                startTime += pauseDuration; // 完美抵消這段時間！
+                var pauseIndicator = document.getElementById('timer-status-indicator');
+                if (pauseIndicator) pauseIndicator.classList.add('hidden');
+            }
+
+            if (activeAlertCallback) { var cb = activeAlertCallback; activeAlertCallback = null; cb(); }
+        }
 
         function toggleSettings() {
-            const modal = document.getElementById('modal-settings');
-            if(modal.classList.contains('hidden')) {
-                const pwd = prompt("密碼 (預設6888)：");
-                if(pwd === TEACHER_PASSWORD) { modal.classList.remove('hidden'); modal.classList.add('flex'); loadEditorLevel(); }
-            } else { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+            var modal = document.getElementById('modal-settings');
+            if (modal.classList.contains('hidden')) {
+                var pwd = prompt("【安全鎖保護】請輸入教師管理密碼以進入設定面板：\n(預設密碼為 6888)");
+                if (pwd === null) return;
+                if (pwd !== TEACHER_PASSWORD) { showAlert("warning", "拒絕存取", "您輸入的教師管理密碼不正確！"); return; }
+                modal.classList.remove('hidden'); modal.classList.add('flex');
+                loadEditorLevel();
+            } else {
+                modal.classList.add('hidden'); modal.classList.remove('flex');
+            }
         }
 
-        function loadEditorLevel() { selectedEditorLevel = parseInt(document.getElementById('editor-level-select').value); document.getElementById('editor-img-url').value = gameData.levels[selectedEditorLevel].bgImg; document.getElementById('editor-bg-preview').src = document.getElementById('editor-img-url').value; renderEditorMarkers(); }
-        function updateEditorBg() { document.getElementById('editor-bg-preview').src = document.getElementById('editor-img-url').value; renderEditorMarkers(); }
-        function renderEditorMarkers() { const layer = document.getElementById('editor-markers-layer'); layer.innerHTML = ''; gameData.levels[selectedEditorLevel].hotspots.forEach(spot => { const m = document.createElement('div'); m.className = "absolute w-8 h-8 bg-teal-500 rounded-full border-2 border-white cursor-move"; m.style.left = spot.x + "%"; m.style.top = spot.y + "%"; m.style.transform = 'translate(-50%,-50%)'; layer.appendChild(m); }); }
-        function saveAllConfigs() { localStorage.setItem('dengue_game_config', JSON.stringify(gameData)); toggleSettings(); if(!document.getElementById('screen-game').classList.contains('hidden')) loadLevel(currentLevelIndex); }
-        function resetToDefaultConfigs() { localStorage.removeItem('dengue_game_config'); location.reload(); }
+        function saveGasUrl() {
+            var inputElem = document.getElementById('setting-gas-url');
+            if(inputElem) {
+                gasWebappUrl = inputElem.value.trim();
+                localStorage.setItem('dengue_gas_url', gasWebappUrl);
+                fetchRosterFromCloud();
+                showAlert("success", "儲存成功", "GAS 雲端資料庫串接網址已保存，網頁已嘗試動態更新班級名冊資料！");
+            }
+        }
+
+        function loadEditorLevel() {
+            var selectElem = document.getElementById('editor-level-select');
+            if(selectElem) {
+                selectedEditorLevel = parseInt(selectElem.value);
+                document.getElementById('editor-img-url').value = gameData.levels[selectedEditorLevel].bgImg;
+                updateEditorBg();
+            }
+        }
+
+        function updateEditorBg() {
+            var level = gameData.levels[selectedEditorLevel];
+            level.bgImg = document.getElementById('editor-img-url').value.trim();
+            var preview = document.getElementById('editor-bg-preview');
+            if(preview) {
+                preview.src = level.bgImg;
+                preview.onerror = function() { this.src = level.backupBgImg; };
+            }
+            renderEditorMarkers();
+        }
+
+        function handleEditorMapClick(e) {
+            if (isDragging) return;
+            var container = document.getElementById('editor-map-container');
+            if(!container) return;
+            var rect = container.getBoundingClientRect();
+            var x = parseFloat((((e.clientX - rect.left) / rect.width) * 100).toFixed(1));
+            var y = parseFloat((((e.clientY - rect.top) / rect.height) * 100).toFixed(1));
+
+            var spotName = prompt("請為此處孳生源命名 (例如：[衛教]冷水壺):");
+            if (!spotName) return;
+            var spotDesc = prompt("請輸入教學提示說明文：", "此處容易下雨積水，孳生病媒蚊卵，應落實巡倒清刷...");
+            if (!spotDesc) return;
+
+            var level = gameData.levels[selectedEditorLevel];
+            var newId = 1;
+            if(level.hotspots.length > 0) {
+                var maxId = 0;
+                for(var i=0; i<level.hotspots.length; i++) {
+                    if(level.hotspots[i].id > maxId) maxId = level.hotspots[i].id;
+                }
+                newId = maxId + 1;
+            }
+            level.hotspots.push({ id: newId, x: x, y: y, r: 8.0, name: spotName, desc: spotDesc });
+            renderEditorMarkers();
+        }
+
+        function startDrag(e) {
+            e.stopPropagation(); isDragging = true;
+            activeDragSpotId = parseInt(e.currentTarget.id.replace('drag-marker-', ''));
+        }
+
+        // Drag positioning helper
+        function updateSpotPosition(spotId, x, y) {
+            var spot = gameData.levels[selectedEditorLevel].hotspots.find(function(h) { return h.id === spotId; });
+            if (spot) {
+                spot.x = parseFloat(x.toFixed(1)); spot.y = parseFloat(y.toFixed(1));
+                var markerEl = document.getElementById("drag-marker-" + spot.id);
+                var boundaryEl = document.getElementById("drag-boundary-" + spot.id);
+                if (markerEl) { markerEl.style.left = spot.x + "%"; markerEl.style.top = spot.y + "%"; }
+                if (boundaryEl) { boundaryEl.style.left = spot.x + "%"; boundaryEl.style.top = spot.y + "%"; }
+                var xTextEl = document.getElementById("coord-x-" + spot.id);
+                var yTextEl = document.getElementById("coord-y-" + spot.id);
+                if (xTextEl) xTextEl.innerText = spot.x + "%";
+                if (yTextEl) yTextEl.innerText = spot.y + "%";
+            }
+        }
+
+        function handleGlobalMouseMove(e) {
+            if (!isDragging || activeDragSpotId === null) return;
+            var container = document.getElementById('editor-map-container');
+            if(!container) return;
+            var rect = container.getBoundingClientRect();
+            var x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+            var y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+            updateSpotPosition(activeDragSpotId, x, y);
+        }
+
+        function handleGlobalTouchMove(e) {
+            if (!isDragging || activeDragSpotId === null) return;
+            e.preventDefault();
+            var container = document.getElementById('editor-map-container');
+            if(!container) return;
+            var rect = container.getBoundingClientRect();
+            var x = Math.max(0, Math.min(100, ((e.touches[0].clientX - rect.left) / rect.width) * 100));
+            var y = Math.max(0, Math.min(100, ((e.touches[0].clientY - rect.top) / rect.height) * 100));
+            updateSpotPosition(activeDragSpotId, x, y);
+        }
+
+        function handleGlobalMouseUp() { if (isDragging) { setTimeout(function() { isDragging = false; }, 50); activeDragSpotId = null; renderEditorMarkers(); } }
+        function handleGlobalTouchEnd() { if (isDragging) { setTimeout(function() { isDragging = false; }, 50); activeDragSpotId = null; renderEditorMarkers(); } }
+
+        function enableInlineEdit(id, field) {
+            var element = document.getElementById("spot-" + field + "-text-" + id);
+            var spot = gameData.levels[selectedEditorLevel].hotspots.find(function(h) { return h.id === id; });
+            if (!element || !spot) return;
+            
+            if (field === 'name') {
+                var input = document.createElement('input');
+                input.type = 'text'; input.value = element.innerText;
+                input.className = "w-full px-2 py-1 text-xs border border-teal-300 rounded font-extrabold text-teal-800 focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white";
+                var saveHandler = function() { if (input.value.trim()) spot.name = input.value.trim(); renderEditorMarkers(); };
+                input.onblur = saveHandler; input.onkeydown = function(e) { if (e.key === 'Enter') saveHandler(); if (e.key === 'Escape') renderEditorMarkers(); };
+                element.innerHTML = ''; element.appendChild(input); input.focus(); input.select();
+            } else {
+                var textarea = document.createElement('textarea');
+                textarea.value = element.innerText; textarea.rows = 2;
+                textarea.className = "w-full px-2 py-1 text-[11px] border border-teal-300 rounded text-slate-600 focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white leading-tight";
+                var saveHandler2 = function() { if (textarea.value.trim()) spot.desc = textarea.value.trim(); renderEditorMarkers(); };
+                textarea.onblur = saveHandler2; textarea.onkeydown = function(e) { if (e.key === 'Enter' && !e.shiftKey) saveHandler2(); if (e.key === 'Escape') renderEditorMarkers(); };
+                element.innerHTML = ''; element.appendChild(textarea); textarea.focus(); textarea.select();
+            }
+        }
+
+        function renderEditorMarkers() {
+            var layer = document.getElementById('editor-markers-layer');
+            var listTbody = document.getElementById('editor-hotspots-list');
+            if(!layer || !listTbody) return;
+            layer.innerHTML = ''; listTbody.innerHTML = '';
+
+            gameData.levels[selectedEditorLevel].hotspots.forEach(function(spot, idx) {
+                var marker = document.createElement('div');
+                marker.id = "drag-marker-" + spot.id;
+                marker.className = "absolute w-8 h-8 bg-teal-500/90 border-2 border-white rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md z-10 animate-splat cursor-move pointer-events-auto select-none";
+                marker.style.left = spot.x + "%"; marker.style.top = spot.y + "%"; marker.style.transform = 'translate(-50%, -50%)';
+                marker.innerText = idx + 1;
+                marker.addEventListener('mousedown', startDrag); marker.addEventListener('touchstart', startDrag, { passive: false });
+                marker.addEventListener('dblclick', function(e) {
+                    e.stopPropagation();
+                    var newName = prompt("修改此處孳生源名稱：", spot.name); if (newName === null) return;
+                    var newDesc = prompt("修改此處教學提示說明：", spot.desc); if (newDesc === null) return;
+                    spot.name = newName.trim() || spot.name; spot.desc = newDesc.trim() || spot.desc; renderEditorMarkers();
+                });
+                layer.appendChild(marker);
+
+                var boundary = document.createElement('div');
+                boundary.id = "drag-boundary-" + spot.id;
+                boundary.className = "absolute border-2 border-dashed border-rose-500 bg-rose-500/15 rounded-full pointer-events-none z-0";
+                boundary.style.left = spot.x + "%"; boundary.style.top = spot.y + "%"; boundary.style.width = (spot.r * 2) + "%"; boundary.style.height = (spot.r * 2) + "%"; boundary.style.transform = 'translate(-50%, -50%)';
+                layer.appendChild(boundary);
+
+                var tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50";
+                
+                var displayNameHTML = (spot.name && spot.name.indexOf("[衛教]") === 0) 
+                    ? '<span class="bg-amber-100 text-amber-700 px-1 py-0.5 rounded text-[10px] mr-1">衛教</span>' + spot.name.replace("[衛教]", "").trim()
+                    : spot.name;
+
+                tr.innerHTML = 
+                    '<td id="coord-x-' + spot.id + '" class="p-2 font-mono text-slate-500">' + spot.x + '%</td>' +
+                    '<td id="coord-y-' + spot.id + '" class="p-2 font-mono text-slate-500">' + spot.y + '%</td>' +
+                    '<td class="p-2">' +
+                        '<div class="font-extrabold text-teal-800 cursor-pointer select-none hover:text-teal-600 transition" id="spot-name-text-' + spot.id + '" ondblclick="enableInlineEdit(' + spot.id + ', \'name\')">' + displayNameHTML + '</div>' +
+                        '<div class="text-[10px] text-slate-400 font-medium cursor-pointer select-none hover:text-slate-600 transition mt-1 leading-tight" id="spot-desc-text-' + spot.id + '" ondblclick="enableInlineEdit(' + spot.id + ', \'desc\')">' + spot.desc + '</div>' +
+                    '</td>' +
+                    '<td class="p-2 text-center">' +
+                        '<div class="flex items-center justify-center gap-1">' +
+                            '<input type="number" step="0.5" min="2" max="25" value="' + spot.r + '" onchange="updateHotspotRadius(' + spot.id + ', this.value)" class="w-14 px-1 py-1 border border-slate-200 rounded-lg text-center font-bold font-mono text-xs text-rose-600 focus:outline-teal-500"><span class="text-[10px] text-slate-400 font-bold">%</span>' +
+                        '</div>' +
+                    '</td>' +
+                    '<td class="p-2 text-center"><button onclick="deleteHotspot(' + spot.id + ')" class="text-rose-500 hover:text-rose-600 px-1 text-sm"><i class="fa-solid fa-trash-can"></i></button></td>';
+                listTbody.appendChild(tr);
+            });
+        }
+
+        function updateHotspotRadius(id, newRadius) {
+            var spot = gameData.levels[selectedEditorLevel].hotspots.find(function(h) { return h.id === id; });
+            if (spot) {
+                var rVal = parseFloat(newRadius) || 5; if (rVal < 2) rVal = 2; if (rVal > 25) rVal = 25;
+                spot.r = rVal; renderEditorMarkers();
+            }
+        }
+
+        function deleteHotspot(id) { 
+            gameData.levels[selectedEditorLevel].hotspots = gameData.levels[selectedEditorLevel].hotspots.filter(function(h) { return h.id !== id; }); 
+            renderEditorMarkers(); 
+        }
+        
+        function clearCurrentLevelHotspots() { 
+            if (confirm("確認要清空此關卡目前的所有可點擊熱點嗎？")) { 
+                gameData.levels[selectedEditorLevel].hotspots = []; 
+                renderEditorMarkers(); 
+            } 
+        }
+
+        function exportGameData() {
+            var tempText = document.createElement('textarea');
+            tempText.value = JSON.stringify(gameData); document.body.appendChild(tempText);
+            tempText.select(); document.execCommand('copy'); document.body.removeChild(tempText);
+            showAlert("success", "📤 複製成功！", "已將您設定的所有關卡坐標與文字配置複製到您的剪貼簿！您可以直接將這段文字貼給 AI。");
+        }
+
+        function importGameData() {
+            var rawInput = prompt("請貼上您匯出的座標配置 JSON 字串：");
+            if (!rawInput) return;
+            try {
+                var parsed = JSON.parse(rawInput);
+                if (parsed.levels && parsed.levels.length > 0) {
+                    gameData = parsed; localStorage.setItem('dengue_game_config', JSON.stringify(gameData));
+                    loadEditorLevel(); showAlert("success", "📥 匯入成功！", "關卡、座標與說明配置已成功套用！");
+                } else { showAlert("warning", "匯入失敗", "格式似乎不正確，必須是有效的關卡配置資料。"); }
+            } catch(e) { showAlert("warning", "匯入失敗", "解析 JSON 錯誤，請確保您複製的是完整無遺漏的匯出字串。"); }
+        }
+
+        function saveAllConfigs() {
+            localStorage.setItem('dengue_game_config', JSON.stringify(gameData));
+            showAlert("success", "保存成功", "所有關卡圖片、熱點坐標與自訂點擊半徑配置已成功套用至遊戲中！");
+            toggleSettings();
+            if (!document.getElementById('screen-game').classList.contains('hidden')) loadLevel(currentLevelIndex);
+        }
+
+        // 清除本機微調記憶，強制使用預設最新座標與說明的後台按鈕
+        function resetToDefaultConfigs() {
+            if (confirm("【警告】這將會清除這台設備上的舊有微調記憶，並強制載入最新的「衛教熱點」與新文字預設值。確定要繼續嗎？")) {
+                localStorage.removeItem('dengue_game_config');
+                location.reload();
+            }
+        }
+
+        function copyGasCode() {
+            var gasCode = "/**\n" +
+" * 登革熱病媒蚊防治網頁遊戲 - 雲端試算表後端 GAS 腳本 (升級支援學生名冊自動同步)\n" +
+" */\n\n" +
+"const SPREADSHEET = SpreadsheetApp.getActiveSpreadsheet();\n\n" +
+"function doGet(e) {\n" +
+"  const action = e.parameter.action;\n" +
+"  if (action === \"getScores\") return handleGetScores();\n" +
+"  if (action === \"getRoster\") return handleGetRoster();\n  \n" +
+"  return HtmlService.createHtmlOutputFromFile('index')\n" +
+"      .setTitle(\"登革熱獵人 - 孳生源清除大作戰\")\n" +
+"      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);\n" +
+"}\n\n" +
+"function doPost(e) {\n" +
+"  try {\n" +
+"    const postData = JSON.parse(e.postData.contents);\n" +
+"    const action = postData.action;\n" +
+"    if (action === \"addScore\") return handleAddScore(postData.data);\n" +
+"    return createJSONOutput({ status: \"error\", message: \"Invalid action\" });\n" +
+"  } catch(err) {\n" +
+"    return createJSONOutput({ status: \"error\", message: err.toString() });\n" +
+"  }\n" +
+"}\n\n" +
+"function handleGetRoster() {\n" +
+"  let sheet = SPREADSHEET.getSheetByName(\"學生名冊\");\n" +
+"  if (!sheet) {\n" +
+"    sheet = SPREADSHEET.insertSheet(\"學生名冊\");\n" +
+"    sheet.appendRow([\"班級\", \"座號\", \"姓名\"]);\n" +
+"    sheet.appendRow([\"701\", \"1\", \"陳大同\"]);\n" +
+"    sheet.appendRow([\"701\", \"2\", \"林小美\"]);\n" +
+"    sheet.appendRow([\"702\", \"1\", \"王大胖\"]);\n" +
+"    sheet.appendRow([\"708\", \"1\", \"張君雅\"]);\n" +
+"    sheet.setFrozenRows(1);\n" +
+"  }\n  \n" +
+"  const data = sheet.getDataRange().getValues();\n" +
+"  let roster = { classes: [], students: {} };\n  \n" +
+"  if (data.length > 1) {\n" +
+"    for (let i = 1; i < data.length; i++) {\n" +
+"      let className = data[i][0] ? data[i][0].toString().trim() : \"\";\n" +
+"      let seat = data[i][1] ? data[i][1].toString().trim() : \"\";\n" +
+"      let name = data[i][2] ? data[i][2].toString().trim() : \"\";\n      \n" +
+"      if (!className || !name) continue;\n      \n" +
+"      if (!roster.classes.includes(className)) {\n" +
+"        roster.classes.push(className);\n" +
+"        roster.students[className] = [];\n" +
+"      }\n" +
+"      roster.students[className].push({ seat: seat, name: name });\n" +
+"    }\n" +
+"  }\n" +
+"  roster.classes.sort();\n" +
+"  return createJSONOutput(roster);\n" +
+"}\n\n" +
+"function handleGetScores() {\n" +
+"  const sheets = SPREADSHEET.getSheets();\n" +
+"  let allScores = [];\n  \n" +
+"  sheets.forEach(sheet => {\n" +
+"    if (sheet.getName() === \"學生名冊\") return;\n" +
+"    const data = sheet.getDataRange().getValues();\n" +
+"    if (data.length > 1) {\n" +
+"      for (let i = 1; i < data.length; i++) {\n" +
+"        allScores.push({\n" +
+"          id: data[i][0] ? data[i][0].toString() : \"\",\n" +
+"          class: data[i][1] ? data[i][1].toString() : \"\",\n" +
+"          name: data[i][2] ? data[i][2].toString() : \"\",\n" +
+"          rawTime: data[i][3] ? parseFloat(data[i][3]) : 0,\n" +
+"          mistakes: data[i][4] ? parseInt(data[i][4]) : 0,\n" +
+"          finalScore: data[i][5] ? parseFloat(data[i][5]) : 0,\n" +
+"          date: data[i][6] ? Utilities.formatDate(new Date(data[i][6]), \"GMT+8\", \"yyyy-MM-dd\") : \"\"\n" +
+"        });\n" +
+"      }\n" +
+"    }\n" +
+"  });\n" +
+"  return createJSONOutput(allScores);\n" +
+"}\n\n" +
+"function handleAddScore(score) {\n" +
+"  const sheetName = score.class;\n" +
+"  let sheet = SPREADSHEET.getSheetByName(sheetName);\n  \n" +
+"  if (!sheet) {\n" +
+"    sheet = SPREADSHEET.insertSheet(sheetName);\n" +
+"    sheet.appendRow([\"唯一識別碼\", \"班級\", \"學生姓名\", \"遊玩原始秒數\", \"失誤次數\", \"最終總秒數(成績)\", \"記錄日期\"]);\n" +
+"    sheet.setFrozenRows(1);\n" +
+"  }\n  \n" +
+"  sheet.appendRow([\n" +
+"    score.id,\n" +
+"    score.class,\n" +
+"    score.name,\n" +
+"    score.rawTime,\n" +
+"    score.mistakes,\n" +
+"    score.finalScore,\n" +
+"    new Date()\n" +
+"  ]);\n" +
+"  return createJSONOutput({ status: \"success\", message: \"Score saved successfully.\" });\n" +
+"}\n\n" +
+"function createJSONOutput(obj) { \n" +
+"  return ContentService.createTextOutput(JSON.stringify(obj))\n" +
+"    .setMimeType(ContentService.MimeType.JSON);\n" +
+"}";
+            var tempText = document.createElement('textarea');
+            tempText.value = gasCode; document.body.appendChild(tempText);
+            tempText.select(); document.execCommand('copy'); document.body.removeChild(tempText);
+            showAlert("success", "腳本代碼複製成功！", "你可以直接到 Google 試算表貼上此腳本，並進行網頁部署串接。");
+        }
     </script>
 </body>
 </html>
