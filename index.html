@@ -92,7 +92,7 @@
             <!-- Login Form -->
             <div class="space-y-4 text-left">
                 <!-- Class Selection -->
-                <div>
+                <div id="class-selection-container">
                     <label class="block text-sm font-extrabold text-slate-600 mb-2">
                         <i class="fa-solid fa-school text-teal-500 mr-1.5"></i> 選擇你的班級
                     </label>
@@ -385,6 +385,11 @@
                         <button onclick="importGameData()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-xl transition flex items-center gap-1">
                             <i class="fa-solid fa-file-arrow-down"></i> 📥 匯入設定 (文字貼入)
                         </button>
+                        
+                        <!-- ✅ 新增：免連線分享網址按鈕 -->
+                        <button onclick="copyLocalShareLink()" class="px-4 py-2 bg-teal-100 hover:bg-teal-200 text-teal-800 text-xs font-extrabold rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-link"></i> 🔗 複製「免連線單機版」分享網址
+                        </button>
                     </div>
                 </div>
             </div>
@@ -443,7 +448,7 @@
     <!--                                                                           -->
     <!-- ⬇️⬇️⬇️⬇️⬇️⬇️   【重要】 老師請注意：以下是您的設定區   ⬇️⬇️⬇️⬇️⬇️⬇️             -->
     <!--                                                                           -->
-    // =========================================================================
+    <!-- ========================================================================= -->
     <script>
         // -------------------------------------------------------------------------
         // 🚨 【設定步驟 1】 請在下面的雙引號 "" 內，精準貼上您的 GAS 網址。
@@ -562,9 +567,24 @@
 
         window.addEventListener('DOMContentLoaded', function() {
             try {
+                // ✅ 新增：判斷網址是否為免連線單機版 (?local=true)
                 var urlParams = new URLSearchParams(window.location.search);
+                var isLocalOnly = urlParams.get('local') === 'true';
                 var queryGas = urlParams.get('gas');
-                if (queryGas) {
+                
+                if (isLocalOnly) {
+                    gasWebappUrl = "";
+                    var rs = document.getElementById('roster-status');
+                    if (rs) {
+                        rs.innerHTML = '<i class="fa-solid fa-wifi text-slate-400"></i><span class="text-slate-500 font-extrabold"> 單機免連線模式</span>';
+                        rs.className = "hidden text-xs bg-slate-100 px-3 py-1.5 rounded-full font-bold flex items-center gap-1";
+                        rs.classList.remove('hidden');
+                        rs.classList.add('flex');
+                    }
+                    var classSelectionContainer = document.getElementById('class-selection-container');
+                    if(classSelectionContainer) classSelectionContainer.style.display = 'none'; // 單機版隱藏班級選單
+                    handleClassChange(); // 顯示純打字輸入框
+                } else if (queryGas) {
                     gasWebappUrl = decodeURIComponent(queryGas).trim();
                     localStorage.setItem('dengue_gas_url', gasWebappUrl); 
                 } else if (localStorage.getItem('dengue_gas_url')) {
@@ -580,15 +600,18 @@
                     gameData = JSON.parse(localStorage.getItem('dengue_game_config'));
                 }
                 
-                var rosterTimeout = setTimeout(function() {
-                    if (!cloudRosterData && gasWebappUrl) {
-                        var warnElem = document.getElementById('connection-warning');
-                        if (warnElem) warnElem.classList.remove('hidden');
-                        handleClassChange();
-                    }
-                }, 3000);
-
-                fetchRosterFromCloud(rosterTimeout);
+                // 如果不是單機版才去要資料
+                if (!isLocalOnly) {
+                    var rosterTimeout = setTimeout(function() {
+                        if (!cloudRosterData && gasWebappUrl) {
+                            var warnElem = document.getElementById('connection-warning');
+                            if (warnElem) warnElem.classList.remove('hidden');
+                            handleClassChange();
+                        }
+                    }, 3000);
+                    fetchRosterFromCloud(rosterTimeout);
+                }
+                
                 loadEditorLevel();
 
                 window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -655,12 +678,15 @@
         }
 
         function handleClassChange() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
             var classSelect = document.getElementById('input-class');
-            var selectedClass = classSelect ? classSelect.value : "701";
+            var selectedClass = classSelect ? classSelect.value : "單機玩家";
             var container = document.getElementById('student-name-input-container');
             if (!container) return;
 
-            if (cloudRosterData && cloudRosterData.students && cloudRosterData.students[selectedClass]) {
+            if (!isLocalOnly && cloudRosterData && cloudRosterData.students && cloudRosterData.students[selectedClass]) {
                 var students = cloudRosterData.students[selectedClass];
                 students.sort(function(a, b) { return parseInt(a.seat || 0) - parseInt(b.seat || 0); });
                 var dropdownHtml = '<div class="relative"><select id="input-name" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 appearance-none font-bold text-slate-700">';
@@ -676,9 +702,12 @@
         }
 
         function startGame() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
             var classInput = document.getElementById('input-class');
             var nameInput = document.getElementById('input-name');
-            playerClass = classInput ? classInput.value : "701";
+            playerClass = (classInput && !isLocalOnly) ? classInput.value : "單機模式";
             playerName = nameInput ? nameInput.value.trim() : "";
             if (!playerName) { showAlert("warning", "哎呀！", "請選擇或輸入您的姓名才能開始競賽。"); return; }
 
@@ -958,6 +987,9 @@
         }
 
         function filterRank(type) {
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
             var btnCurrent = document.getElementById('btn-filter-current');
             var btnAll = document.getElementById('btn-filter-all');
             var tbody = document.getElementById('leaderboard-body');
@@ -997,7 +1029,10 @@
         }
 
         function fetchScoresFromServer(callback) {
-            if (!gasWebappUrl) {
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
+            if (!gasWebappUrl || isLocalOnly) {
                 callback(JSON.parse(localStorage.getItem('dengue_scores') || '[]'));
                 return;
             }
@@ -1015,7 +1050,10 @@
         }
 
         function postScoreToGAS(scoreItem) {
-            if (!gasWebappUrl) return;
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
+            if (!gasWebappUrl || isLocalOnly) return; // 單機版絕對不往上傳
             try {
                 fetch(gasWebappUrl, {
                     method: "POST", mode: "no-cors",
@@ -1319,6 +1357,15 @@
                 localStorage.removeItem('dengue_game_config');
                 location.reload();
             }
+        }
+
+        // ✅ 新增：複製免連線單機版分享網址功能
+        function copyLocalShareLink() {
+            var localUrl = window.location.origin + window.location.pathname + "?local=true";
+            var tempText = document.createElement('textarea');
+            tempText.value = localUrl; document.body.appendChild(tempText);
+            tempText.select(); document.execCommand('copy'); document.body.removeChild(tempText);
+            showAlert("success", "🔗 網址複製成功！", "已經將「免連線單機版」網址複製到剪貼簿！<br><br>請其他老師直接把這個網址轉成 QR Code。<br>學生掃描後就能直接玩，而且成績<b>「不會」</b>跑到您的試算表裡喔！");
         }
 
         function copyGasCode() {
