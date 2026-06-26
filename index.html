@@ -406,12 +406,34 @@
         </div>
     </div>
 
-    <!-- ================= CUSTOM DIALOG MODAL ================= -->
+    <!-- ================= CUSTOM DIALOG MODAL (NOW WITH QUIZ!) ================= -->
     <div id="custom-alert" class="fixed inset-0 z-50 hidden flex justify-center items-center p-4 bg-slate-950/40 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4 border border-slate-100 animate-splat">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl text-center space-y-4 border border-slate-100 animate-splat relative">
+            
+            <!-- Close button for Quiz Mode -->
+            <button id="alert-close-btn" class="hidden absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
             <div id="alert-icon" class="w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm"></div>
             <h3 class="text-xl font-extrabold text-slate-800" id="alert-title">標題</h3>
-            <p class="text-sm font-bold text-slate-500" id="alert-text">內文</p>
+            <p class="text-sm font-bold text-slate-600 leading-relaxed text-left bg-slate-50 p-4 rounded-xl" id="alert-text">內文</p>
+            
+            <!-- ⚡ 新增：O/X 防疫挑戰區塊 -->
+            <div id="quiz-container" class="hidden flex-col gap-3 pt-2">
+                <div class="text-sm font-black text-rose-600">🎯 防疫隨堂考：請根據上方說明判斷對錯！</div>
+                <div class="flex gap-3">
+                    <button onclick="handleQuizAnswer(true)" class="flex-1 py-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-extrabold rounded-xl border border-emerald-300 transition flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-circle-o text-xl"></i> 對 (O)
+                    </button>
+                    <button onclick="handleQuizAnswer(false)" class="flex-1 py-3 bg-rose-100 hover:bg-rose-200 text-rose-700 font-extrabold rounded-xl border border-rose-300 transition flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-xmark text-xl"></i> 錯 (X)
+                    </button>
+                </div>
+                <p class="text-xs text-slate-400 font-bold mt-1">答對減 3 秒，答錯加罰 10 秒！</p>
+            </div>
+
+            <!-- Standard OK Button (Hidden during quiz) -->
             <button onclick="closeAlert()" id="alert-btn" class="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-sm rounded-xl transition">
                 確定
             </button>
@@ -499,6 +521,10 @@
         var isTimerPaused = false;
         var pauseStartTime = 0;
 
+        // Quiz State
+        var currentQuizSpot = null;
+        var pendingLevelCompletion = false; // Flag to delay level completion until quiz is done
+
         var AudioSynth = {
             ctx: null,
             init: function() {
@@ -532,12 +558,13 @@
             playHit: function() { this.playSound([{ f: 150, ramp: 800, d: 0.15, t: 0, v: 0.3 }], 0.16); },
             playMiss: function() { this.playSound([{ f: 120, d: 0.07, t: 0, v: 0.2 }, { f: 80, d: 0.07, t: 0.08, v: 0.2 }], 0.15, "sawtooth"); },
             playLevelClear: function() { this.playSound([{ f: 261.63, d: 0.3, t: 0.1 }, { f: 329.63, d: 0.3, t: 0.2 }, { f: 392.00, d: 0.3, t: 0.3 }, { f: 523.25, d: 0.3, t: 0.4 }], 0.5, "triangle"); },
-            playTriumph: function() { this.playSound([{ f: 392.00, d: 0.1, t: 0.12 }, { f: 523.25, d: 0.1, t: 0.24 }, { f: 659.25, d: 0.1, t: 0.36 }, { f: 783.99, d: 0.3, t: 0.48 }, { f: 659.25, d: 0.1, t: 0.8 }, { f: 783.99, d: 0.6, t: 0.95 }], 1.5); }
+            playTriumph: function() { this.playSound([{ f: 392.00, d: 0.1, t: 0.12 }, { f: 523.25, d: 0.1, t: 0.24 }, { f: 659.25, d: 0.1, t: 0.36 }, { f: 783.99, d: 0.3, t: 0.48 }, { f: 659.25, d: 0.1, t: 0.8 }, { f: 783.99, d: 0.6, t: 0.95 }], 1.5); },
+            playBonus: function() { this.playSound([{ f: 523.25, d: 0.1, t: 0 }, { f: 659.25, d: 0.2, t: 0.1 }], 0.3, "sine"); },
+            playPenalty: function() { this.playSound([{ f: 100, d: 0.3, t: 0 }], 0.3, "sawtooth"); }
         };
 
         window.addEventListener('DOMContentLoaded', function() {
             try {
-                // ✅ 新增：判斷網址是否為免連線單機版 (?local=true)
                 var urlParams = new URLSearchParams(window.location.search);
                 var isLocalOnly = urlParams.get('local') === 'true';
                 var queryGas = urlParams.get('gas');
@@ -552,8 +579,8 @@
                         rs.classList.add('flex');
                     }
                     var classSelectionContainer = document.getElementById('class-selection-container');
-                    if(classSelectionContainer) classSelectionContainer.style.display = 'none'; // 單機版隱藏班級選單
-                    handleClassChange(); // 顯示純打字輸入框
+                    if(classSelectionContainer) classSelectionContainer.style.display = 'none';
+                    handleClassChange();
                 } else if (queryGas) {
                     gasWebappUrl = decodeURIComponent(queryGas).trim();
                     localStorage.setItem('dengue_gas_url', gasWebappUrl); 
@@ -570,7 +597,6 @@
                     gameData = JSON.parse(localStorage.getItem('dengue_game_config'));
                 }
                 
-                // 如果不是單機版才去要資料
                 if (!isLocalOnly) {
                     var rosterTimeout = setTimeout(function() {
                         if (!cloudRosterData && gasWebappUrl) {
@@ -757,6 +783,7 @@
             if (!foundMatch) handleMiss(clickX, clickY);
         }
 
+        // 🌟 防疫 O/X 挑戰整合邏輯 🌟
         function handleSuccessfulHit(spot, x, y) {
             foundHotspots.push(spot.id);
             AudioSynth.playHit();
@@ -768,6 +795,7 @@
             var title = isEducational ? "💡 衛教小貼士" : "✨ 發現孳生源！";
             var cleanName = spot.name ? spot.name.replace("[衛教]", "").trim() : "";
 
+            // 進入答題狀態：凍結時間
             if (!gameFinished) {
                 isTimerPaused = true;
                 pauseStartTime = performance.now();
@@ -775,8 +803,7 @@
                 if (pauseIndicator) pauseIndicator.classList.remove('hidden');
             }
 
-            showAlert("success", title, "<strong>【" + cleanName + "】</strong><br><span class=\"text-slate-600 font-medium text-xs leading-relaxed mt-2 block\">" + spot.desc + "</span>");
-
+            // 更新背景進度，但不觸發結關（等待答題完畢）
             var level = gameData.levels[currentLevelIndex];
             var targetSpots = level.hotspots.filter(function(h) { return h.name && h.name.indexOf("[衛教]") !== 0; });
             var totalCleanable = targetSpots.length;
@@ -789,12 +816,79 @@
             document.getElementById('hud-found-count').innerText = clearedCount;
             document.getElementById('hud-progress-bar').style.width = (totalCleanable === 0 ? 100 : (clearedCount / totalCleanable) * 100) + "%";
 
+            // 如果這是最後一個點，設定延遲結關標記
             if (clearedCount >= totalCleanable) {
-                setTimeout(function() {
-                    handleLevelComplete();
-                }, 800);
+                pendingLevelCompletion = true;
             }
+
+            // 觸發 O/X 問答視窗
+            showQuizAlert(title, cleanName, spot.desc, spot);
         }
+
+        // Quiz Handling UI
+        function showQuizAlert(title, cleanName, desc, spot) {
+            currentQuizSpot = spot; // 紀錄目前正在考哪一題
+
+            var alertModal = document.getElementById('custom-alert');
+            var alertIcon = document.getElementById('alert-icon');
+            
+            // Setup quiz modal styling
+            alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-indigo-100 text-indigo-500 animate-bounce";
+            alertIcon.innerHTML = '<i class="fa-solid fa-clipboard-question"></i>';
+            
+            document.getElementById('alert-title').innerHTML = title;
+            document.getElementById('alert-text').innerHTML = `<strong>【${cleanName}】</strong><br><span class="mt-2 block">${desc}</span>`;
+            
+            // Show quiz buttons, hide normal OK button
+            document.getElementById('quiz-container').classList.remove('hidden');
+            document.getElementById('quiz-container').classList.add('flex');
+            document.getElementById('alert-btn').classList.add('hidden');
+            document.getElementById('alert-close-btn').classList.add('hidden');
+
+            alertModal.classList.remove('hidden'); 
+            alertModal.classList.add('flex');
+        }
+
+        // Process Quiz Answer
+        function handleQuizAnswer(isO) {
+            // 預設我們所有的教學說明敘述都是「正確的觀念」，所以正確答案永遠是 O (true)
+            var isCorrect = (isO === true);
+
+            var alertIcon = document.getElementById('alert-icon');
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('flex');
+            document.getElementById('alert-btn').classList.remove('hidden');
+
+            if (isCorrect) {
+                // 答對減 3 秒！
+                startTime += 3000; 
+                AudioSynth.playBonus();
+                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-emerald-100 text-emerald-500";
+                alertIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+                document.getElementById('alert-title').innerHTML = "🎉 答對了！";
+                document.getElementById('alert-text').innerHTML = "觀念正確！系統給予**減 3 秒**獎勵！";
+            } else {
+                // 答錯加罰 10 秒！
+                totalMistakes += 3; // 在視覺失誤計數器上加 3 次 (等於 9 秒 + 1 = 約 10 秒處罰)
+                startTime -= 10000;
+                document.getElementById('hud-mistakes').innerText = totalMistakes + " 次";
+                AudioSynth.playPenalty();
+                
+                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-rose-100 text-rose-500 animate-pulse";
+                alertIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                document.getElementById('alert-title').innerHTML = "❌ 答錯了！";
+                document.getElementById('alert-text').innerHTML = `請再看清楚說明喔！不認真看字亂猜，系統**加罰 10 秒**！<br><br><span class="text-xs text-slate-500">${currentQuizSpot.desc}</span>`;
+            }
+
+            // 掛載關閉事件
+            activeAlertCallback = function() {
+                if (pendingLevelCompletion) {
+                    pendingLevelCompletion = false;
+                    setTimeout(function() { handleLevelComplete(); }, 400);
+                }
+            };
+        }
+
 
         function handleMiss(x, y) {
             totalMistakes++;
@@ -903,7 +997,7 @@
                 tr.innerHTML = '<td class="py-3 px-4 text-center font-black text-slate-600">' + rankDisplay + '</td>' +
                     '<td class="py-3 px-4"><span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded mr-2">' + score.class + '</span><span class="text-slate-800 font-extrabold">' + score.name + '</span></td>' +
                     '<td class="py-3 px-4 text-center font-bold text-rose-600 font-mono">' + score.finalScore.toFixed(2) + 's</td>' +
-                    '<td class="py-3 px-4 text-center text-slate-400 text-xs font-bold">+' + (score.mistakes * 3) + '秒 (' + score.mistakes + '次)</td>';
+                    '<td class="py-3 px-4 text-center text-slate-400 text-xs font-bold">+${score.mistakes * 3}秒 (${score.mistakes}次)</td>';
                 tbody.appendChild(tr);
             });
         }
@@ -933,7 +1027,7 @@
             var urlParams = new URLSearchParams(window.location.search);
             var isLocalOnly = urlParams.get('local') === 'true';
 
-            if (!gasWebappUrl || isLocalOnly) return; // 單機版絕對不往上傳
+            if (!gasWebappUrl || isLocalOnly) return; 
             try {
                 fetch(gasWebappUrl, {
                     method: "POST", mode: "no-cors",
@@ -957,10 +1051,17 @@
             showAlert("success", "複製成功！", "已將成績挑戰誓言複製到你的剪貼簿，趕快貼給其他同學吧！");
         }
 
-        var activeAlertCallback = null;
+        // ================= CUSTOM DIALOG POPUPS =================
         function showAlert(type, title, text, callback) {
             var alertModal = document.getElementById('custom-alert');
             var alertIcon = document.getElementById('alert-icon');
+            
+            // 確保每次呼叫普通 Alert 時，Quiz 區塊是隱藏的，並且 OK 按鈕是顯示的
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('flex');
+            document.getElementById('alert-btn').classList.remove('hidden');
+            document.getElementById('alert-close-btn').classList.add('hidden');
+
             activeAlertCallback = callback || null;
             if (type === "success") {
                 alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-emerald-100 text-emerald-500 animate-bounce";
@@ -1331,7 +1432,7 @@
 "  ]);\n" +
 "  return createJSONOutput({ status: \"success\", message: \"Score saved successfully.\" });\n" +
 "}\n\n" +
-"function createJSONOutput(obj) { \n" +
+"function createJSONOutput(obj) {\n" +
 "  return ContentService.createTextOutput(JSON.stringify(obj))\n" +
 "    .setMimeType(ContentService.MimeType.JSON);\n" +
 "}";
