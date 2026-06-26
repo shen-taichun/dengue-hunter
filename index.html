@@ -92,7 +92,7 @@
             <!-- Login Form -->
             <div class="space-y-4 text-left">
                 <!-- Class Selection -->
-                <div>
+                <div id="class-selection-container">
                     <label class="block text-sm font-extrabold text-slate-600 mb-2">
                         <i class="fa-solid fa-school text-teal-500 mr-1.5"></i> 選擇你的班級
                     </label>
@@ -385,6 +385,11 @@
                         <button onclick="importGameData()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold rounded-xl transition flex items-center gap-1">
                             <i class="fa-solid fa-file-arrow-down"></i> 📥 匯入設定 (文字貼入)
                         </button>
+                        
+                        <!-- ✅ 新增：免連線分享網址按鈕 -->
+                        <button onclick="copyLocalShareLink()" class="px-4 py-2 bg-teal-100 hover:bg-teal-200 text-teal-800 text-xs font-extrabold rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-link"></i> 🔗 複製「免連線單機版」分享網址
+                        </button>
                     </div>
                 </div>
             </div>
@@ -401,40 +406,15 @@
         </div>
     </div>
 
-    <!-- ================= CUSTOM DIALOG MODAL (UPGRADED FOR INTERACTIVE QUIZ) ================= -->
+    <!-- ================= CUSTOM DIALOG MODAL ================= -->
     <div id="custom-alert" class="fixed inset-0 z-50 hidden flex justify-center items-center p-4 bg-slate-950/40 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl text-center space-y-4 border border-slate-100 animate-splat">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4 border border-slate-100 animate-splat">
             <div id="alert-icon" class="w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm"></div>
             <h3 class="text-xl font-extrabold text-slate-800" id="alert-title">標題</h3>
-            
-            <div id="alert-content-container" class="space-y-4 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100 max-h-[350px] overflow-y-auto">
-                <p class="text-sm font-medium text-slate-600 leading-relaxed" id="alert-text">內文</p>
-                
-                <!-- O/X Quiz Container -->
-                <div id="quiz-block" class="hidden border-t border-slate-200 pt-3 space-y-2 mt-2">
-                    <div class="text-xs font-black text-rose-600 uppercase tracking-wide flex items-center gap-1">
-                        <i class="fa-solid fa-shield-virus animate-pulse"></i> 防疫大挑戰 (O / X)
-                    </div>
-                    <p id="quiz-question-text" class="text-sm font-black text-slate-800 leading-relaxed"></p>
-                </div>
-            </div>
-
-            <!-- Standard close button -->
+            <p class="text-sm font-bold text-slate-500" id="alert-text">內文</p>
             <button onclick="closeAlert()" id="alert-btn" class="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-extrabold text-sm rounded-xl transition">
                 確定
             </button>
-
-            <!-- Quiz interactive choice buttons (hidden by default) -->
-            <div id="alert-quiz-buttons" class="hidden flex gap-4 w-full">
-                <button onclick="submitQuizAnswer(true)" class="flex-1 py-3.5 bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-circle-notch text-lg"></i>
-                    <span>正確 (O)</span>
-                </button>
-                <button onclick="submitQuizAnswer(false)" class="flex-1 py-3.5 bg-gradient-to-r from-rose-400 to-red-500 hover:from-rose-500 hover:to-red-600 text-white font-black rounded-2xl shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                    <span>錯誤 (X)</span>
-                </button>
-            </div>
         </div>
     </div>
 
@@ -443,7 +423,7 @@
     <!--                                                                           -->
     <!-- ⬇️⬇️⬇️⬇️⬇️⬇️   【重要】 老師請注意：以下是您的設定區   ⬇️⬇️⬇️⬇️⬇️⬇️             -->
     <!--                                                                           -->
-    // =========================================================================
+    <!-- ========================================================================= -->
     <script>
         // -------------------------------------------------------------------------
         // 🚨 【設定步驟 1】 請在下面的雙引號 "" 內，精準貼上您的 GAS 網址。
@@ -468,18 +448,18 @@
                     bgImg: "indoor.png",
                     backupBgImg: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=1200",
                     hotspots: [
-                        {id:1,x:3.5,y:31,r:9,name:"窗台花盆底盤",desc:"花盆底盤積水是室內最常見的斑蚊孳生地點，需定期倒水清洗。", q:"花盆底盤只要有一點點積水，就會成為斑蚊繁殖的溫床嗎？", a:true},
-                        {id:2,x:15.5,y:52,r:8.5,name:"廚房水槽碗碟積水",desc:"水槽中堆疊的未洗碗盤容易積水，即使一小口水也能讓蚊子產卵。", q:"只要水槽裡的碗盤積水只有一小口，蚊子就絕對無法在裡面產卵嗎？", a:false},
-                        {id:3,x:72,y:36.5,r:6.5,name:"飲水機水盤",desc:"飲水機接水盤、冰箱除霜水盤都是極易被遺忘的室內積水點。", q:"飲水機接水盤因為常有熱水經過，所以是完全安全，絕對不會孳生斑蚊的？", a:false},
-                        {id:4,x:86.8,y:49.5,r:8,name:"浴室放置過久的水桶",desc:"用完的水桶應清洗後，倒置，避免積水", q:"用完的水桶應該清洗乾淨後直接正立擺放，不需倒置？", a:false},
-                        {id:5,x:25.6,y:91.4,r:10,name:"[衛教]潮濕的地毯",desc:"地毯潮濕主要會影響環境衛生", q:"潮濕的地毯通常只會影響環境衛生與發霉，並不是登革熱病媒蚊首選的積水產卵容器？", a:true},
-                        {id:6,x:93.4,y:25,r:8,name:"積水的花瓶、容器",desc:"閒置不用的容器應清除積水後倒置並保持乾燥", q:"閒置不用的容器不需要倒置，只要放在室內乾淨環境下就不會長孑孓？", a:false},
-                        {id:7,x:55.7,y:37.9,r:8,name:"[衛教]有加蓋的冷水壺",desc:"盛裝水的容器有加蓋比較不會孳生蚊蟲", q:"盛裝水的容器如果平時有蓋好蓋子，就能有效防止病媒蚊進去產卵？", a:true},
-                        {id:8,x:16.5,y:31,r:8,name:"[衛教]盆栽",desc:"這個盆栽沒有會積水的接水盤喔！", q:"這個盆栽下方沒有擺放接水盤，因此它不是病媒蚊高風險的孳生地點？", a:true},
-                        {id:9,x:79.5,y:65.2,r:8,name:"[衛教]盛裝飲品的水杯",desc:"沒喝完的飲料在還沒孳生蚊蠅之前，就已經先發霉啦！記得隨手清洗食具，避免食物中毒。", q:"沒喝完的飲料杯放在桌上，最快產生的衛生問題通常是發霉與細菌滋生？", a:true},
-                        {id:10,x:93.1,y:79.7,r:8,name:"[衛教]食器",desc:"沒積水的食具，沒收放整齊有礙觀瞻。", q:"完全沒有積水的乾淨食器，依然會提供水份讓登革熱斑蚊產卵？", a:false},
-                        {id:11,x:21.2,y:48.3,r:8,name:"[衛教]廚房水槽碗碟積水",desc:"跟左邊那一疊一樣會有孳生蚊子的風險", q:"廚房堆積多日的碗盤，無論在水槽左側還是右側，只要有積水都有孳生登革熱病媒蚊的風險？", a:true},
-                        {id:12,x:7.8,y:62.6,r:8,name:"[衛教]未食用的點心",desc:"只要是食物都要留意存放的地點跟溫度，盡早食用。", q:"未食用的點心如果完全乾燥沒有積水，通常不會孳生蚊子，但會吸引蟑螂和螞蟻？", a:true}
+                        {id:1,x:3.5,y:31,r:9,name:"窗台花盆底盤",desc:"花盆底盤積水是室內最常見的斑蚊孳生地點，需定期倒水清洗。"},
+                        {id:2,x:15.5,y:52,r:8.5,name:"廚房水槽碗碟積水",desc:"水槽中堆疊的未洗碗盤容易積水，即使一小口水也能讓蚊子產卵。"},
+                        {id:3,x:72,y:36.5,r:6.5,name:"飲水機水盤",desc:"飲水機接水盤、冰箱除霜水盤都是極易被遺忘的室內積水點。"},
+                        {id:4,x:86.8,y:49.5,r:8,name:"浴室放置過久的水桶",desc:"用完的水桶應清洗後，倒置，避免積水"},
+                        {id:5,x:25.6,y:91.4,r:10,name:"[衛教]潮濕的地毯",desc:"地毯潮濕主要會影響環境衛生"},
+                        {id:6,x:93.4,y:25,r:8,name:"積水的花瓶、容器",desc:"閒置不用的容器應清除積水後倒置並保持乾燥"},
+                        {id:7,x:55.7,y:37.9,r:8,name:"[衛教]有加蓋的冷水壺",desc:"盛裝水的容器有加蓋比較不會孳生蚊蟲"},
+                        {id:8,x:16.5,y:31,r:8,name:"[衛教]盆栽",desc:"這個盆栽沒有會積水的接水盤喔！"},
+                        {id:9,x:79.5,y:65.2,r:8,name:"[衛教]盛裝飲品的水杯",desc:"沒喝完的飲料在還沒孳生蚊蠅之前，就已經先發霉啦！記得隨手清洗食具，避免食物中毒。"},
+                        {id:10,x:93.1,y:79.7,r:8,name:"[衛教]食器",desc:"沒積水的食具，沒收放整齊有礙觀瞻。"},
+                        {id:11,x:21.2,y:48.3,r:8,name:"[衛教]廚房水槽碗碟積水",desc:"跟左邊那一疊一樣會有孳生蚊子的風險"},
+                        {id:12,x:7.8,y:62.6,r:8,name:"[衛教]未食用的點心",desc:"只要是食物都要留意存放的地點跟溫度，盡早食用。"}
                     ]
                 },
                 {
@@ -488,15 +468,15 @@
                     bgImg: "outdoor.png",
                     backupBgImg: "https://images.unsplash.com/photo-1590001155093-a3c66ab0c3ff?auto=format&fit=crop&q=80&w=1200",
                     hotspots: [
-                        {id:3,x:47.5,y:81,r:12,name:"露天雨後地面積水",desc:"不平整的水泥地 or 石板路雨後易積水，應及時填平或掃乾淨。", q:"戶外的石板路或水泥地凹凸不平產生積水，我們應該及時填平或掃除，以防蚊蟲孳生？", a:true},
-                        {id:7,x:38.7,y:50,r:10,name:"露天鐵桶",desc:"閒置的大型容器下雨時迅速積水，必須倒置或蓋上細紗網。", q:"露天擺放的大鐵桶如果不蓋細紗網，下雨時很容易積水孳生大量孑孓？", a:true},
-                        {id:8,x:16.1,y:39.3,r:8,name:"防塵塑膠布皺褶",desc:"覆蓋雜物的塑膠帆布凹槽極易在雨後產生水袋積水，須拉平拉直。", q:"防雨防塵的塑膠帆布如果皺褶產生積水，病媒蚊是絕對不會在這種「人工塑膠材質」裡面產卵的？", a:false},
-                        {id:9,x:74.1,y:31.3,r:8,name:"大樹隱蔽樹洞",desc:"樹洞與竹筒也是病媒蚊隱秘的自然繁殖場所，可用泥沙填塞。", q:"樹幹上的樹洞與砍斷的竹筒，因為是自然植物的一部分，所以登革熱病媒蚊絕對不會在裡面繁殖？", a:false},
-                        {id:11,x:84.2,y:79.3,r:8,name:"未加蓋的容器",desc:"下雨容易積水，孳生病媒蚊卵，應落實巡倒清刷...", q:"下雨天後，我們應落實「巡、倒、清、刷」來清除未加蓋容器的積水？", a:true},
-                        {id:12,x:63.7,y:50.8,r:8,name:"廢棄容器",desc:"廢棄容器未加蓋，應倒置擺放，避免積水。", q:"暫時不用的廢棄容器，最好的擺放方式是開口朝上直接露天放著？", a:false},
-                        {id:13,x:58.2,y:60.4,r:8,name:"廢棄容器",desc:"廢棄容器建議加蓋或是倒置擺放。", q:"露天的廢棄容器如果無法清除，建議要加蓋或者完全倒置擺放？", a:true},
-                        {id:14,x:75.5,y:65.2,r:8,name:"潮濕的紙箱",desc:"潮濕的紙箱本身不會直接孳生蚊子，但它會吸收水氣、發霉並提供陰暗環境，吸引蚊子躲藏或吸引其他蚊蟲（如蟑螂、蠹蟲）進駐。", q:"潮濕發霉的紙箱雖然不會直接孳生孑哓，但會提供陰暗潮濕環境吸引成蚊躲藏？", a:true},
-                        {id:15,x:17.2,y:82.4,r:12,name:"廢棄輪胎",desc:"輪胎的內部凹槽極易積水，且黑色吸熱也吸引蚊子。", q:"廢棄輪胎因為呈黑色且有弧形凹槽，在雨後極容易積水並吸引蚊子產卵？", a:true}
+                        {id:3,x:47.5,y:81,r:12,name:"露天雨後地面積水",desc:"不平整的水泥地 or 石板路雨後易積水，應及時填平或掃乾淨。"},
+                        {id:7,x:38.7,y:50,r:10,name:"露天鐵桶",desc:"閒置的大型容器下雨時迅速積水，必須倒置或蓋上細紗網。"},
+                        {id:8,x:16.1,y:39.3,r:8,name:"防塵塑膠布皺褶",desc:"覆蓋雜物的塑膠帆布凹槽極易在雨後產生水袋積水，須拉平拉直。"},
+                        {id:9,x:74.1,y:31.3,r:8,name:"大樹隱蔽樹洞",desc:"樹洞與竹筒也是病媒蚊隱秘的自然繁殖場所，可用泥沙填塞。"},
+                        {id:11,x:84.2,y:79.3,r:8,name:"未加蓋的容器",desc:"下雨容易積水，孳生病媒蚊卵，應落實巡倒清刷..."},
+                        {id:12,x:63.7,y:50.8,r:8,name:"廢棄容器",desc:"廢棄容器未加蓋，應倒置擺放，避免積水。"},
+                        {id:13,x:58.2,y:60.4,r:8,name:"廢棄容器",desc:"廢棄容器建議加蓋或是倒置擺放。"},
+                        {id:14,x:75.5,y:65.2,r:8,name:"潮濕的紙箱",desc:"潮濕的紙箱本身不會直接孳生蚊子，但它會吸收水氣、發霉並提供陰暗環境，吸引蚊子躲藏或吸引其他蚊蟲（如蟑螂、蠹蟲）進駐。"},
+                        {id:15,x:17.2,y:82.4,r:12,name:"廢棄輪胎",desc:"輪胎的內部凹槽極易積水，且黑色吸熱也吸引蚊子。"}
                     ]
                 }
             ]
@@ -516,13 +496,8 @@
         var isDragging = false;
         var activeDragSpotId = null;
 
-        // 🧠 時間暫停狀態與變數，確保學生閱讀衛教說明與答題時「時間完全靜止」！
         var isTimerPaused = false;
         var pauseStartTime = 0;
-
-        // 💡 答題臨時變數
-        var currentQuizSpot = null;
-        var currentQuizCoordinates = {x: 0, y: 0};
 
         var AudioSynth = {
             ctx: null,
@@ -562,9 +537,24 @@
 
         window.addEventListener('DOMContentLoaded', function() {
             try {
+                // ✅ 新增：判斷網址是否為免連線單機版 (?local=true)
                 var urlParams = new URLSearchParams(window.location.search);
+                var isLocalOnly = urlParams.get('local') === 'true';
                 var queryGas = urlParams.get('gas');
-                if (queryGas) {
+                
+                if (isLocalOnly) {
+                    gasWebappUrl = "";
+                    var rs = document.getElementById('roster-status');
+                    if (rs) {
+                        rs.innerHTML = '<i class="fa-solid fa-wifi text-slate-400"></i><span class="text-slate-500 font-extrabold"> 單機免連線模式</span>';
+                        rs.className = "hidden text-xs bg-slate-100 px-3 py-1.5 rounded-full font-bold flex items-center gap-1";
+                        rs.classList.remove('hidden');
+                        rs.classList.add('flex');
+                    }
+                    var classSelectionContainer = document.getElementById('class-selection-container');
+                    if(classSelectionContainer) classSelectionContainer.style.display = 'none'; // 單機版隱藏班級選單
+                    handleClassChange(); // 顯示純打字輸入框
+                } else if (queryGas) {
                     gasWebappUrl = decodeURIComponent(queryGas).trim();
                     localStorage.setItem('dengue_gas_url', gasWebappUrl); 
                 } else if (localStorage.getItem('dengue_gas_url')) {
@@ -580,15 +570,18 @@
                     gameData = JSON.parse(localStorage.getItem('dengue_game_config'));
                 }
                 
-                var rosterTimeout = setTimeout(function() {
-                    if (!cloudRosterData && gasWebappUrl) {
-                        var warnElem = document.getElementById('connection-warning');
-                        if (warnElem) warnElem.classList.remove('hidden');
-                        handleClassChange();
-                    }
-                }, 3000);
-
-                fetchRosterFromCloud(rosterTimeout);
+                // 如果不是單機版才去要資料
+                if (!isLocalOnly) {
+                    var rosterTimeout = setTimeout(function() {
+                        if (!cloudRosterData && gasWebappUrl) {
+                            var warnElem = document.getElementById('connection-warning');
+                            if (warnElem) warnElem.classList.remove('hidden');
+                            handleClassChange();
+                        }
+                    }, 3000);
+                    fetchRosterFromCloud(rosterTimeout);
+                }
+                
                 loadEditorLevel();
 
                 window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -655,12 +648,15 @@
         }
 
         function handleClassChange() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
             var classSelect = document.getElementById('input-class');
-            var selectedClass = classSelect ? classSelect.value : "701";
+            var selectedClass = classSelect ? classSelect.value : "單機玩家";
             var container = document.getElementById('student-name-input-container');
             if (!container) return;
 
-            if (cloudRosterData && cloudRosterData.students && cloudRosterData.students[selectedClass]) {
+            if (!isLocalOnly && cloudRosterData && cloudRosterData.students && cloudRosterData.students[selectedClass]) {
                 var students = cloudRosterData.students[selectedClass];
                 students.sort(function(a, b) { return parseInt(a.seat || 0) - parseInt(b.seat || 0); });
                 var dropdownHtml = '<div class="relative"><select id="input-name" class="w-full px-4 py-3.5 bg-white border border-teal-200 rounded-2xl focus:ring-4 focus:ring-teal-100 focus:border-teal-400 outline-none transition duration-200 appearance-none font-bold text-slate-700">';
@@ -676,9 +672,12 @@
         }
 
         function startGame() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
             var classInput = document.getElementById('input-class');
             var nameInput = document.getElementById('input-name');
-            playerClass = classInput ? classInput.value : "701";
+            playerClass = (classInput && !isLocalOnly) ? classInput.value : "單機模式";
             playerName = nameInput ? nameInput.value.trim() : "";
             if (!playerName) { showAlert("warning", "哎呀！", "請選擇或輸入您的姓名才能開始競賽。"); return; }
 
@@ -701,7 +700,6 @@
             document.getElementById('hud-level-num').innerText = level.levelNum;
             document.getElementById('hud-found-count').innerText = "0";
             
-            // 計算總過關需求數時，自動扣除 [衛教] 熱點
             var targetSpots = level.hotspots.filter(function(h) {
                 return h.name && h.name.indexOf("[衛教]") !== 0;
             });
@@ -719,7 +717,7 @@
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(function() {
-                if (gameFinished || isTimerPaused) return; // 💡 暫停時不計時
+                if (gameFinished || isTimerPaused) return; 
                 elapsedTime = (performance.now() - startTime) / 1000;
                 document.getElementById('hud-timer').innerText = formatTime(elapsedTime);
             }, 33);
@@ -733,7 +731,7 @@
         }
 
         function handleBoardClick(e) {
-            if (gameFinished || isTimerPaused) return; // 💡 暫停時不接受任何背景點擊
+            if (gameFinished || isTimerPaused) return; 
             var clickLayer = document.getElementById('game-click-layer');
             var rect = clickLayer.getBoundingClientRect();
             var clickX = ((e.clientX - rect.left) / rect.width) * 100;
@@ -747,8 +745,6 @@
                 var distance = Math.sqrt(Math.pow(clickX - spot.x, 2) + Math.pow(clickY - spot.y, 2));
                 if (distance <= spot.r) {
                     foundMatch = true;
-                    
-                    // 🎯 核心升級：若該點已經找過了，跳出綠色文字提示，絕對不扣分（也不重複加分），避免學生有挫折感
                     if (foundHotspots.indexOf(spot.id) !== -1) {
                         createVisualFeedback(clickX, clickY, "✔️ 已經找過囉！", "text-emerald-600 font-extrabold text-sm drop-shadow-md animate-floatText absolute");
                         AudioSynth.playHit(); 
@@ -761,9 +757,17 @@
             if (!foundMatch) handleMiss(clickX, clickY);
         }
 
-        // 衛教熱點與過關熱點的獨立判定邏輯
         function handleSuccessfulHit(spot, x, y) {
-            // 💡 核心機制：點對時立刻暫停背景計時
+            foundHotspots.push(spot.id);
+            AudioSynth.playHit();
+
+            createVisualFeedback(x, y, "💥", "text-rose-500 font-extrabold text-2xl scale-150 animate-ping absolute");
+            createSuccessMarker(spot.x, spot.y, spot.name);
+
+            var isEducational = spot.name && spot.name.indexOf("[衛教]") === 0;
+            var title = isEducational ? "💡 衛教小貼士" : "✨ 發現孳生源！";
+            var cleanName = spot.name ? spot.name.replace("[衛教]", "").trim() : "";
+
             if (!gameFinished) {
                 isTimerPaused = true;
                 pauseStartTime = performance.now();
@@ -771,99 +775,8 @@
                 if (pauseIndicator) pauseIndicator.classList.remove('hidden');
             }
 
-            // 保存臨時挑戰資料
-            currentQuizSpot = spot;
-            currentQuizCoordinates = {x: x, y: y};
+            showAlert("success", title, "<strong>【" + cleanName + "】</strong><br><span class=\"text-slate-600 font-medium text-xs leading-relaxed mt-2 block\">" + spot.desc + "</span>");
 
-            // 判斷是否為衛教熱點
-            var isEducational = spot.name && spot.name.indexOf("[衛教]") === 0;
-            var title = isEducational ? "💡 衛教小貼士" : "✨ 發現孳生源！";
-            var cleanName = spot.name ? spot.name.replace("[衛教]", "").trim() : "";
-
-            // 隨機建立答題 Q&A 系統。若資料庫有自訂題目則使用自訂，無則自動產生防呆題目。
-            var questionText = spot.q || "針對「" + cleanName + "」，日常落實「巡、倒、清、刷」是清除登革熱病媒蚊的最佳方式嗎？";
-            var correctAnswer = typeof spot.a !== "undefined" ? spot.a : true;
-
-            // 顯示答題對話框
-            showQuizModal(title, "<strong>【" + cleanName + "】</strong><br><span class=\"text-slate-600 font-medium text-xs leading-relaxed mt-2 block\">" + spot.desc + "</span>", questionText);
-        }
-
-        function showQuizModal(title, text, question) {
-            var alertModal = document.getElementById('custom-alert');
-            var alertIcon = document.getElementById('alert-icon');
-            
-            alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-teal-100 text-teal-500 animate-bounce";
-            alertIcon.innerHTML = '<i class="fa-solid fa-mosquito"></i>';
-            
-            document.getElementById('alert-title').innerHTML = title;
-            document.getElementById('alert-text').innerHTML = text;
-            
-            // 啟用 O/X 答題區塊，顯示題目
-            document.getElementById('quiz-block').classList.remove('hidden');
-            document.getElementById('quiz-question-text').innerHTML = question;
-            
-            // 隱藏一般確定按鈕，顯示 O/X 互動按鈕
-            document.getElementById('alert-btn').classList.add('hidden');
-            document.getElementById('alert-quiz-buttons').classList.remove('hidden');
-            
-            alertModal.classList.remove('hidden');
-            alertModal.classList.add('flex');
-        }
-
-        function submitQuizAnswer(chosenAnswer) {
-            var isCorrect = (chosenAnswer === currentQuizSpot.a);
-            var cleanName = currentQuizSpot.name.replace("[衛教]", "").trim();
-            var alertIcon = document.getElementById('alert-icon');
-            var alertTitle = document.getElementById('alert-title');
-            var alertText = document.getElementById('alert-text');
-
-            // 關閉問答區按鈕與問題 block
-            document.getElementById('quiz-block').classList.add('hidden');
-            document.getElementById('alert-quiz-buttons').classList.add('hidden');
-            document.getElementById('alert-btn').classList.remove('hidden');
-            document.getElementById('alert-btn').innerText = "繼續挑戰";
-
-            if (isCorrect) {
-                // 🏆 答對獎勵：播放通關音，從累計成績中直接扣除 3 秒！
-                AudioSynth.playLevelClear();
-                startTime += 3000; // 扣除 3000 毫秒
-
-                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-emerald-100 text-emerald-500 animate-bounce";
-                alertIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-                alertTitle.innerHTML = "🎉 答對了！過關！";
-                alertText.innerHTML = "太棒了！您對「<b>" + cleanName + "</b>」的防護觀念完全正確！<br><br><span class=\"text-emerald-600 font-extrabold text-base tracking-wide flex items-center justify-center gap-1\"><i class=\"fa-solid fa-bolt\"></i> 獲得防疫神速獎勵：總秒數減 3 秒！</span>";
-                
-                // 本熱點正式視為被清除 (衛教點不列入統計但會在地圖打勾標示)
-                registerSplatSuccess();
-            } else {
-                // ❌ 答錯懲罰：播放答錯蜂鳴音，罰時加 10 秒！
-                AudioSynth.playMiss();
-                startTime -= 10000; // 增加 10000 毫秒
-                totalMistakes++; // 視為失誤一次
-                document.getElementById('hud-mistakes').innerText = totalMistakes + " 次";
-
-                alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-rose-100 text-rose-500 animate-pulse";
-                alertIcon.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
-                alertTitle.innerHTML = "❌ 答錯了！病媒蚊趁機孳生！";
-                
-                var correctAnswerText = currentQuizSpot.a ? "正確 (O)" : "錯誤 (X)";
-                alertText.innerHTML = "防護觀念有誤！該選項正確應為：<b>" + correctAnswerText + "</b>。<br>病媒蚊已在「<b>" + cleanName + "</b>」積水處產卵成功，防疫失守！<br><br><span class=\"text-rose-600 font-extrabold text-base tracking-wide flex items-center justify-center gap-1\"><i class=\"fa-solid fa-skull-crossbones\"></i> 遭受病媒蚊奇襲懲罰：總秒數加罰 10 秒！</span><br><span class=\"text-slate-500 text-xs block mt-1\">請再次詳讀衛教說明： " + currentQuizSpot.desc + "</span>";
-                
-                // 依然標註已被找過，但付出慘痛代價
-                registerSplatSuccess();
-            }
-        }
-
-        function registerSplatSuccess() {
-            var spot = currentQuizSpot;
-            var x = currentQuizCoordinates.x;
-            var y = currentQuizCoordinates.y;
-
-            foundHotspots.push(spot.id);
-            createVisualFeedback(x, y, "💥", "text-rose-500 font-extrabold text-2xl scale-150 animate-ping absolute");
-            createSuccessMarker(spot.x, spot.y, spot.name);
-
-            // 計算當前進度（自動排除 [衛教] 熱點）
             var level = gameData.levels[currentLevelIndex];
             var targetSpots = level.hotspots.filter(function(h) { return h.name && h.name.indexOf("[衛教]") !== 0; });
             var totalCleanable = targetSpots.length;
@@ -876,13 +789,10 @@
             document.getElementById('hud-found-count').innerText = clearedCount;
             document.getElementById('hud-progress-bar').style.width = (totalCleanable === 0 ? 100 : (clearedCount / totalCleanable) * 100) + "%";
 
-            // 判斷關卡是否通關
             if (clearedCount >= totalCleanable) {
-                activeAlertCallback = function() {
+                setTimeout(function() {
                     handleLevelComplete();
-                };
-            } else {
-                activeAlertCallback = null;
+                }, 800);
             }
         }
 
@@ -908,7 +818,6 @@
         function createSuccessMarker(x, y, name) {
             var layer = document.getElementById('found-markers-layer');
             var marker = document.createElement('div');
-            // ✅ 大打勾立體陰影符號，固定鎖定在物件正中央
             marker.className = "absolute w-12 h-12 bg-emerald-500 border-4 border-white rounded-full flex items-center justify-center text-white text-xl shadow-xl transition-all duration-300 animate-splat";
             marker.style.left = x + "%"; marker.style.top = y + "%";
             marker.style.transform = 'translate(-50%, -50%)';
@@ -958,6 +867,9 @@
         }
 
         function filterRank(type) {
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
             var btnCurrent = document.getElementById('btn-filter-current');
             var btnAll = document.getElementById('btn-filter-all');
             var tbody = document.getElementById('leaderboard-body');
@@ -997,7 +909,10 @@
         }
 
         function fetchScoresFromServer(callback) {
-            if (!gasWebappUrl) {
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
+            if (!gasWebappUrl || isLocalOnly) {
                 callback(JSON.parse(localStorage.getItem('dengue_scores') || '[]'));
                 return;
             }
@@ -1015,7 +930,10 @@
         }
 
         function postScoreToGAS(scoreItem) {
-            if (!gasWebappUrl) return;
+            var urlParams = new URLSearchParams(window.location.search);
+            var isLocalOnly = urlParams.get('local') === 'true';
+
+            if (!gasWebappUrl || isLocalOnly) return; // 單機版絕對不往上傳
             try {
                 fetch(gasWebappUrl, {
                     method: "POST", mode: "no-cors",
@@ -1051,13 +969,6 @@
                 alertIcon.className = "w-16 h-16 rounded-full flex items-center justify-center text-3xl mx-auto shadow-sm bg-amber-100 text-amber-500 animate-pulse";
                 alertIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
             }
-            
-            // 確保 O/X 問答區隱藏，回歸普通視窗
-            document.getElementById('quiz-block').classList.add('hidden');
-            document.getElementById('alert-quiz-buttons').classList.add('hidden');
-            document.getElementById('alert-btn').classList.remove('hidden');
-            document.getElementById('alert-btn').innerText = "確定";
-
             document.getElementById('alert-title').innerHTML = title;
             document.getElementById('alert-text').innerHTML = text;
             alertModal.classList.remove('hidden'); alertModal.classList.add('flex');
@@ -1067,12 +978,11 @@
             var alertModal = document.getElementById('custom-alert');
             alertModal.classList.add('hidden'); alertModal.classList.remove('flex');
 
-            // 💡 當對話框關閉時，計算「暫停期間的時間差」加回遊戲啟動時間中，使這段閱讀答題時間完全不計！
             if (isTimerPaused) {
                 isTimerPaused = false;
                 var pauseEndTime = performance.now();
                 var pauseDuration = pauseEndTime - pauseStartTime;
-                startTime += pauseDuration; // 完美抵消這段時間！
+                startTime += pauseDuration; 
                 var pauseIndicator = document.getElementById('timer-status-indicator');
                 if (pauseIndicator) pauseIndicator.classList.add('hidden');
             }
@@ -1154,7 +1064,6 @@
             activeDragSpotId = parseInt(e.currentTarget.id.replace('drag-marker-', ''));
         }
 
-        // Drag positioning helper
         function updateSpotPosition(spotId, x, y) {
             var spot = gameData.levels[selectedEditorLevel].hotspots.find(function(h) { return h.id === spotId; });
             if (spot) {
@@ -1313,12 +1222,20 @@
             if (!document.getElementById('screen-game').classList.contains('hidden')) loadLevel(currentLevelIndex);
         }
 
-        // 清除本機微調記憶，強制使用預設最新座標與說明的後台按鈕
         function resetToDefaultConfigs() {
             if (confirm("【警告】這將會清除這台設備上的舊有微調記憶，並強制載入最新的「衛教熱點」與新文字預設值。確定要繼續嗎？")) {
                 localStorage.removeItem('dengue_game_config');
                 location.reload();
             }
+        }
+
+        // ✅ 新增：複製免連線單機版分享網址功能
+        function copyLocalShareLink() {
+            var localUrl = window.location.origin + window.location.pathname + "?local=true";
+            var tempText = document.createElement('textarea');
+            tempText.value = localUrl; document.body.appendChild(tempText);
+            tempText.select(); document.execCommand('copy'); document.body.removeChild(tempText);
+            showAlert("success", "🔗 網址複製成功！", "已經將「免連線單機版」網址複製到剪貼簿！<br><br>請其他老師直接把這個網址轉成 QR Code。<br>學生掃描後就能直接玩，而且成績<b>「不會」</b>跑到您的試算表裡喔！");
         }
 
         function copyGasCode() {
